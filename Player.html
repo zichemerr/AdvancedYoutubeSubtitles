@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jamila Smart Listener</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%23D946A8'/><polygon points='40,28 40,72 76,50' fill='white'/></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #111; font-family: 'Inter', sans-serif; color: #fff; overflow-x: hidden; overflow-y: auto; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; padding: 6px 28px; background: #1a1a1a; border-bottom: 1px solid #282828; }
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .topbar-brand { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #D946A8; text-decoration: none; }
+        .back-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; border: 1px solid #333; background: transparent; color: #aaa; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .back-btn:hover { background: rgba(217,70,168,0.1); border-color: #D946A8; color: #D946A8; }
+        .lang-info { font-size: 0.75rem; color: #888; background: #282828; padding: 4px 10px; border-radius: 6px; }
+        .player-area { width: 100%; max-width: 1600px; margin: 0 auto; padding: 6px 20px 0; }
+        .player-wrapper { width: 100%; background: #000; border-radius: 12px; overflow: hidden; }
+        .player-wrapper iframe { width: 100% !important; height: 100% !important; border: none; }
+        .subs-area { flex: 0 0 auto; width: 100%; max-width: 1600px; margin: 0 auto; padding: 6px 20px 20px; display: flex; flex-direction: column; }
+        .subs-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .subs-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #777; }
+        .subs-box { flex: 0 0 auto; max-height: 120px; min-height: 60px; display: flex; flex-direction: column; background: #1a1a1a; border: 1px solid #282828; border-radius: 12px; overflow: hidden; }
+        .subs-scroll { flex: 1; overflow-y: auto; padding: 10px 28px; scroll-behavior: smooth; }
+        .subs-scroll::-webkit-scrollbar { width: 5px; }
+        .subs-scroll::-webkit-scrollbar-track { background: transparent; }
+        .subs-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .sub-line { display: flex; align-items: flex-start; gap: 10px; padding: 4px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; margin-bottom: 1px; border-left: 3px solid transparent; }
+        .sub-line:hover { background: rgba(255,255,255,0.04); }
+        .sub-line.past { opacity: 0.3; }
+        .sub-line.active { background: rgba(217,70,168,0.1); border-left-color: #D946A8; }
+        .sub-line.active .sub-text { color: #fff; font-weight: 600; }
+        .sub-line.active .sub-time { color: #D946A8; }
+        .sub-time { color: #555; font-family: 'Inter', monospace; font-size: 0.8rem; font-weight: 600; flex-shrink: 0; min-width: 44px; padding-top: 3px; }
+        .sub-text { color: #ccc; font-size: 0.9rem; line-height: 1.4; flex: 1; }
+        .placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: #444; font-size: 0.9rem; }
+        .no-subs { color: #666; font-style: italic; text-align: center; padding: 40px; }
+        .sub-text span.word { cursor: pointer; border-radius: 4px; transition: all 0.15s; padding: 1px 3px; }
+        .sub-text span.word:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .sub-text span.word.word-unknown { background: rgba(56,152,255,0.15); border: 1px solid rgba(56,152,255,0.4); border-radius: 4px; padding: 1px 4px; color: #fff; }
+        .sub-text span.word.word-seen { background: rgba(255,200,0,0.12); border: 1px solid rgba(255,200,0,0.35); border-radius: 4px; padding: 1px 4px; }
+        .sub-text span.word.word-unknown:hover { background: rgba(56,152,255,0.25); border-color: rgba(56,152,255,0.6); }
+        .sub-text span.word.word-seen:hover { background: rgba(255,200,0,0.2); border-color: rgba(255,200,0,0.6); }
+        .sub-translate-btn { flex-shrink: 0; width: 30px; height: 30px; border-radius: 6px; border: 1px solid #333; background: transparent; color: #666; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; align-self: center; opacity: 0; }
+        .sub-line:hover .sub-translate-btn { opacity: 1; }
+        .sub-translate-btn:hover { background: rgba(217,70,168,0.1); border-color: #D946A8; color: #D946A8; }
+        .finish-btn { width: 100%; padding: 8px; margin-top: 4px; border: 2px solid #58CC02; border-radius: 8px; background: rgba(88,204,2,0.1); color: #58CC02; font-size: 0.8rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+        .finish-btn:hover { background: rgba(88,204,2,0.2); border-color: #6EE010; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 28px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.6); animation: modalIn 0.2s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .modal-desc { font-size: 0.85rem; color: #999; margin-bottom: 16px; }
+        .modal-words { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; max-height: 140px; overflow-y: auto; padding: 12px; background: #111; border-radius: 10px; border: 1px solid #282828; }
+        .modal-words::-webkit-scrollbar { width: 4px; }
+        .modal-words::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+        .modal-word { padding: 5px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; background: rgba(56,152,255,0.12); border: 1px solid rgba(56,152,255,0.35); color: #fff; cursor: pointer; transition: all 0.15s; user-select: none; }
+        .modal-word:hover { border-color: rgba(56,152,255,0.6); }
+        .modal-word.removed { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.3); color: #666; text-decoration: line-through; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .modal-btn { padding: 10px 22px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; border: none; }
+        .modal-btn-yes { background: #58CC02; color: #fff; }
+        .modal-btn-yes:hover { background: #6EE010; }
+        .modal-btn-no { background: #333; color: #aaa; border: 1px solid #444; }
+        .modal-btn-no:hover { background: #444; color: #fff; }
+        .translate-popup { position: fixed; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 16px; z-index: 100; min-width: 260px; max-width: 360px; max-height: 80vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.6); display: none; }
+        .translate-popup::-webkit-scrollbar { width: 4px; }
+        .translate-popup::-webkit-scrollbar-track { background: transparent; }
+        .translate-popup::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+        .translate-popup.show { display: block; }
+        .drag-handle { cursor: grab; margin: -16px -16px 8px; padding: 10px 16px; border-radius: 12px 12px 0 0; user-select: none; display: flex; align-items: center; justify-content: center; }
+        .drag-handle::after { content: ''; width: 36px; height: 4px; background: #444; border-radius: 2px; }
+        .drag-handle:active { cursor: grabbing; }
+        .drag-handle:hover::after { background: #666; }
+        .close-btn { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 6px; border: 1px solid #333; background: transparent; color: #888; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .close-btn:hover { background: rgba(255,107,107,0.1); border-color: #FF6B6B; color: #FF6B6B; }
+        .translate-original { color: #fff; font-size: 1.2rem; font-weight: 600; word-break: break-word; margin-bottom: 10px; padding-bottom: 10px; padding-right: 28px; border-bottom: 1px solid #333; }
+        .translate-result { color: #58CC02; font-size: 1.05rem; font-weight: 500; word-break: break-word; line-height: 1.5; margin-bottom: 14px; }
+        .translate-loading { color: #666; font-style: italic; }
+        .translate-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .speak-btn { flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; border: 1px solid #333; background: transparent; color: #888; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .speak-btn:hover { background: rgba(217,70,168,0.1); border-color: #D946A8; color: #D946A8; }
+        .speak-btn.playing { color: #D946A8; border-color: #D946A8; background: rgba(217,70,168,0.1); }
+        .learn-btn { flex-shrink: 0; padding: 6px 12px; border-radius: 8px; border: 1px solid #333; background: transparent; color: #58CC02; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .learn-btn:hover { background: rgba(88,204,2,0.1); border-color: #58CC02; }
+        .learn-btn.learned { background: rgba(88,204,2,0.1); border-color: #58CC02; }
+        .lang-select { background: #222; border: 1px solid #333; border-radius: 8px; color: #ddd; font-size: 0.8rem; font-family: inherit; padding: 7px 28px 7px 12px; cursor: pointer; outline: none; transition: all 0.2s; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+        .lang-select:hover { border-color: #555; background-color: #2a2a2a; }
+        .lang-select:focus { border-color: #D946A8; }
+        .lang-select option { background: #1a1a1a; color: #ddd; padding: 8px; }
+        .gtranslate-btn { flex-shrink: 0; padding: 6px 12px; border-radius: 8px; border: 1px solid #333; background: transparent; color: #aaa; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .gtranslate-btn:hover { background: rgba(252,15,17,0.1); border-color: #FC0F11; color: #FC0F11; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="Main.html" class="topbar-brand">
+                <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect rx="6" width="28" height="28" fill="#D946A8"/><polygon points="11,7 11,21 22,14" fill="white"/></svg>
+                Jamila Smart Listener
+            </a>
+            <a href="Main.html" class="back-btn">← Back</a>
+        </div>
+        <span class="lang-info" id="langInfo"></span>
+    </div>
+    <div class="player-area"><div class="player-wrapper" id="player"></div></div>
+    <div class="subs-area" id="subsContainer" style="display:none;">
+        <div class="subs-header"><span class="subs-title">Subtitles</span></div>
+        <div class="subs-box">
+            <div class="subs-scroll" id="subsScroll"><div class="no-subs" id="noSubs">Loading subtitles...</div></div>
+        </div>
+        <button class="finish-btn" id="finishBtn">Finish Lesson</button>
+    </div>
+    <div class="placeholder" id="placeholder">No video</div>
+    <div class="translate-popup" id="translatePopup">
+        <div class="drag-handle" id="dragHandle"></div>
+        <button class="close-btn" id="closeBtn" title="Close">✕</button>
+        <div class="translate-original" id="translateOriginal"></div>
+        <div class="translate-result" id="translateResult"></div>
+        <div class="translate-controls">
+            <button class="learn-btn" id="learnBtn" title="Mark as learned">✓ Learned</button>
+            <button class="speak-btn" id="speakBtn" title="Listen">🔊</button>
+            <a class="gtranslate-btn" id="gtranslateBtn" href="#" target="_blank" rel="noopener">🌐 Yandex</a>
+            <select class="lang-select" id="langSelect">
+                <option value="ru">Русский</option><option value="en">English</option><option value="es">Español</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="zh">中文</option><option value="pt">Português</option><option value="it">Italiano</option><option value="tr">Türkçe</option><option value="ar">العربية</option><option value="hi">हिन्दी</option>
+            </select>
+        </div>
+    </div>
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <div class="modal-title" id="modalTitle">Finish Lesson</div>
+            <div class="modal-desc" id="modalDesc"></div>
+            <div class="modal-words" id="modalWords"></div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-no" id="modalNo">Not yet</button>
+                <button class="modal-btn modal-btn-yes" id="modalYes">I know them all</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let player=null,subLines=[],videoId=null,lastIdx=-1,sourceLang='en';
+        const targetLangKey='yt_player_target_lang';let targetLang=localStorage.getItem(targetLangKey)||'ru';
+        const LEARN_LANG_KEY='yt_learn_lang';
+        let learnLang=new URLSearchParams(window.location.search).get('lang')||localStorage.getItem(LEARN_LANG_KEY)||'en';
+        localStorage.setItem(LEARN_LANG_KEY,learnLang);
+        let seenWords=JSON.parse(localStorage.getItem(`yt_seen_${learnLang}`)||'[]');
+        let learnedWords=JSON.parse(localStorage.getItem(`yt_learned_${learnLang}`)||'[]');
+        let currentWord='';
+        function saveSeenWords(){localStorage.setItem(`yt_seen_${learnLang}`,JSON.stringify([...new Set(seenWords)]));}
+        function saveLearnedWords(){localStorage.setItem(`yt_learned_${learnLang}`,JSON.stringify([...new Set(learnedWords)]));}
+        function markSeen(text){
+            if(sourceLang!==learnLang)return;
+            const words=text.split(/\s+/).map(w=>w.toLowerCase().replace(/[^a-zа-яё]/g,'')).filter(w=>w.length>=1);
+            let changed=false;
+            words.forEach(w=>{if(learnedWords.includes(w))return;if(!seenWords.includes(w)){seenWords.push(w);changed=true;}});
+            if(changed)saveSeenWords();
+        }
+        function markLearned(word){
+            if(sourceLang!==learnLang)return;
+            const w=word.toLowerCase().replace(/[^a-zа-яё]/g,'');if(!w)return;
+            if(!learnedWords.includes(w)){learnedWords.push(w);saveLearnedWords();}
+            seenWords=seenWords.filter(s=>s!==w);saveSeenWords();
+        }
+        function getWordClass(word){
+            const w=word.toLowerCase().replace(/[^a-zа-яё]/g,'');
+            if(!w)return'';if(learnedWords.includes(w))return'';if(seenWords.includes(w))return'word-seen';return'word-unknown';
+        }
+        function getVideoId(){return new URLSearchParams(window.location.search).get('v');}
+        async function apiFetch(path){const res=await fetch(path);const data=await res.json();if(data.error)throw new Error(data.error);return data;}
+        function findBestTrack(tracks,lang){
+            const manual=tracks.filter(t=>t.section==='manual');
+            if(manual.length>0){
+                return manual.find(t=>t.languageCode===lang)
+                    ||manual.find(t=>t.languageCode==='en')
+                    ||manual[0];
+            }
+            const auto=tracks.filter(t=>t.section==='auto');
+            return auto.find(t=>t.languageCode===lang)
+                ||auto.find(t=>t.languageCode==='en')
+                ||auto[0]
+                ||tracks[0];
+        }
+        function formatTime(ms){const s=Math.floor(ms/1000);return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+        function mergeIntoSentences(lines){
+            if(!lines.length)return[];const GAP=800,MAX_WORDS=10,result=[];
+            let cur={text:lines[0].text.trim(),timeMs:lines[0].timeMs,endMs:lines[0].timeMs+(lines[0].durationMs||2000)};
+            for(let i=1;i<lines.length;i++){
+                const prev=lines[i-1],curr=lines[i];
+                const gap=curr.timeMs-(prev.timeMs+(prev.durationMs||2000));
+                const br=/[.!?;:…]$/.test(cur.text.trimEnd())||gap>GAP||cur.text.trim().split(/\s+/).length>=MAX_WORDS;
+                if(!br){cur.text+=' '+curr.text.trim();cur.endMs=curr.timeMs+(curr.durationMs||2000);}
+                else{result.push(cur);cur={text:curr.text.trim(),timeMs:curr.timeMs,endMs:curr.timeMs+(curr.durationMs||2000)};}
+            }
+            result.push(cur);
+            for(const s of result){let t=s.text.replace(/\s+/g,' ').replace(/,(?=\S)/g,', ').trim();if(!/[.!?…]$/.test(t))t+='.';s.text=t.charAt(0).toUpperCase()+t.slice(1);}
+            return result;
+        }
+        function buildLines(lines){
+            const container=document.getElementById('subsScroll');
+            const noSubs=document.getElementById('noSubs');if(noSubs)noSubs.remove();
+            subLines=[];
+            if(!lines.length){container.innerHTML='<div class="no-subs">Subtitles not found</div>';return;}
+            mergeIntoSentences(lines).forEach(sent=>{
+                const div=document.createElement('div');div.className='sub-line';
+                const text=sent.text;
+                const wordsHtml=text.split(/\s+/).filter(w=>w.length>0).map(w=>{
+                    const clean=w.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g,'');
+                    return`<span class="word ${getWordClass(clean)}" data-word="${escapeHtml(clean)}">${escapeHtml(w)}</span>`;
+                }).join(' ');
+                div.innerHTML=`<span class="sub-time">${formatTime(sent.timeMs)}</span><span class="sub-text">${wordsHtml}</span><button class="sub-translate-btn" title="Translate sentence">T</button>`;
+                div.querySelectorAll('.word').forEach(wordEl=>{
+                    wordEl.addEventListener('mouseup',e=>{
+                        setTimeout(()=>{
+                            const sel=window.getSelection();const selText=sel?sel.toString().trim():'';
+                            e.stopPropagation();
+                            if(selText.length>0){const r=sel.getRangeAt(0);const rc=r.getBoundingClientRect();showTranslate(selText,rc.right+8,rc.top-10);}
+                            else{const w=wordEl.getAttribute('data-word')||wordEl.textContent.trim();if(w.length>0){markSeen(w);refreshWordClasses();const rc=wordEl.getBoundingClientRect();showTranslate(w,rc.right+8,rc.top-10);}}
+                        },10);
+                    });
+                });
+                div.querySelector('.sub-translate-btn').addEventListener('click',e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();showTranslate(text,r.left-360,r.top);});
+                const t=sent.timeMs;div.onclick=()=>{if(player&&player.seekTo){player.seekTo(t/1000,true);player.playVideo();}};
+                container.appendChild(div);
+                subLines.push({el:div,timeMs:sent.timeMs,durationMs:sent.endMs-sent.timeMs});
+            });
+        }
+        function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+        let translateAbort=null,currentTranslateText='',currentAudio=null;
+        function speakWord(text,lang){
+            if(currentAudio){currentAudio.pause();currentAudio=null;}
+            const btn=document.getElementById('speakBtn');if(!text||!lang)return;
+            const clean=text.replace(/>>/g,'').replace(/\s+/g,' ').trim();if(!clean)return;
+            const audio=new Audio(`/api/tts?text=${encodeURIComponent(clean)}&lang=${encodeURIComponent(lang)}`);
+            currentAudio=audio;btn.classList.add('playing');
+            audio.onended=()=>{btn.classList.remove('playing');currentAudio=null;};
+            audio.onerror=()=>{btn.classList.remove('playing');currentAudio=null;};
+            audio.play().catch(()=>{btn.classList.remove('playing');currentAudio=null;});
+        }
+        async function showTranslate(text,x,y){
+            if(player&&player.pauseVideo)player.pauseVideo();
+            currentTranslateText=text;currentWord=text.toLowerCase().replace(/[^a-zа-яё]/g,'');
+            const popup=document.getElementById('translatePopup');
+            document.getElementById('translateOriginal').textContent=text;
+            document.getElementById('translateResult').innerHTML='<span class="translate-loading">Translating...</span>';
+            const learnBtn=document.getElementById('learnBtn');
+            document.getElementById('speakBtn').onclick=()=>speakWord(currentTranslateText,sourceLang);
+            updateLearnBtn();
+            learnBtn.onclick=()=>{
+                const words=currentTranslateText.split(/\s+/).map(w=>w.toLowerCase().replace(/[^a-zа-яё]/g,'')).filter(w=>w.length>=1);
+                if(words.every(w=>learnedWords.includes(w))){words.forEach(w=>{learnedWords=learnedWords.filter(l=>l!==w);if(!seenWords.includes(w))seenWords.push(w);});}
+                else{words.forEach(w=>markLearned(w));}
+                saveLearnedWords();saveSeenWords();updateLearnBtn();refreshWordClasses();
+                document.getElementById('translatePopup').classList.remove('show');if(player&&player.playVideo)player.playVideo();
+            };
+            const gtUrl=`https://translate.yandex.com/?lang=${sourceLang}-${targetLang}&text=${encodeURIComponent(text)}`;
+            document.getElementById('gtranslateBtn').href=gtUrl;
+            popup.style.left='0px';popup.style.top='0px';popup.classList.add('show');
+            const pw=popup.offsetWidth,ph=popup.offsetHeight;
+            let px=Math.min(x,window.innerWidth-pw-10);if(px<10)px=10;
+            let py=Math.max(10,y-60);if(py+ph>window.innerHeight-10)py=window.innerHeight-ph-10;if(py<10)py=10;
+            popup.style.left=px+'px';popup.style.top=py+'px';
+            if(translateAbort)translateAbort.abort();translateAbort=new AbortController();
+            try{const res=await fetch(`/api/translate?text=${encodeURIComponent(text)}&from=auto&to=${targetLang}`,{signal:translateAbort.signal});const data=await res.json();if(data.error)throw new Error(data.error);document.getElementById('translateResult').textContent=data.translation;}
+            catch(e){if(e.name!=='AbortError')document.getElementById('translateResult').textContent='Translation error';}
+        }
+        function updateLearnBtn(){
+            const btn=document.getElementById('learnBtn');
+            const words=currentTranslateText.split(/\s+/).map(w=>w.toLowerCase().replace(/[^a-zа-яё]/g,'')).filter(w=>w.length>=1);
+            const done=words.length>0&&words.every(w=>learnedWords.includes(w));
+            btn.classList.toggle('learned',done);
+        }
+        function refreshWordClasses(){document.querySelectorAll('.sub-text .word').forEach(el=>{el.className='word '+(getWordClass(el.getAttribute('data-word'))||'');});}
+        document.getElementById('langSelect').value=targetLang;
+        document.getElementById('langSelect').addEventListener('change',e=>{
+            targetLang=e.target.value;localStorage.setItem(targetLangKey,targetLang);
+            const popup=document.getElementById('translatePopup');
+            if(popup.classList.contains('show')&&currentTranslateText){
+                document.getElementById('translateResult').innerHTML='<span class="translate-loading">Translating...</span>';
+                if(translateAbort)translateAbort.abort();translateAbort=new AbortController();
+                fetch(`/api/translate?text=${encodeURIComponent(currentTranslateText)}&from=auto&to=${targetLang}`,{signal:translateAbort.signal})
+                .then(r=>r.json()).then(d=>{document.getElementById('translateResult').textContent=d.translation;})
+                .catch(()=>{if(!translateAbort.signal.aborted)document.getElementById('translateResult').textContent='Translation error';});
+            }
+        });
+        document.getElementById('closeBtn').addEventListener('click',()=>{document.getElementById('translatePopup').classList.remove('show');if(player&&player.playVideo)player.playVideo();});
+        (function(){
+            const popup=document.getElementById('translatePopup'),handle=document.getElementById('dragHandle');
+            let dragging=false,ox,oy;
+            handle.addEventListener('mousedown',e=>{
+                e.preventDefault();e.stopPropagation();
+                dragging=true;ox=e.clientX-popup.offsetLeft;oy=e.clientY-popup.offsetTop;
+                popup.style.transition='none';
+            });
+            document.addEventListener('mousemove',e=>{
+                if(!dragging)return;
+                let nx=e.clientX-ox,ny=e.clientY-oy;
+                nx=Math.max(0,Math.min(nx,window.innerWidth-popup.offsetWidth));
+                ny=Math.max(0,Math.min(ny,window.innerHeight-popup.offsetHeight));
+                popup.style.left=nx+'px';popup.style.top=ny+'px';
+            });
+            document.addEventListener('mouseup',()=>{if(dragging){dragging=false;popup.style.transition='';}});
+        })();
+        document.addEventListener('mousedown',e=>{const p=document.getElementById('translatePopup');if(!p.contains(e.target)){if(p.classList.contains('show')){p.classList.remove('show');if(player&&player.playVideo)player.playVideo();}window.getSelection().removeAllRanges();}});
+        function findLineIndex(t){let lo=0,hi=subLines.length-1,best=-1;while(lo<=hi){const m=(lo+hi)>>1;if(subLines[m].timeMs<=t){best=m;lo=m+1;}else hi=m-1;}return best;}
+        function updateHighlight(t){if(!subLines.length)return;const i=findLineIndex(t);if(i===lastIdx)return;lastIdx=i;document.querySelectorAll('.sub-line').forEach((el,j)=>{el.classList.remove('past','active');if(j<i)el.classList.add('past');else if(j===i)el.classList.add('active');});if(i>=0)document.querySelectorAll('.sub-line')[i]?.scrollIntoView({behavior:'smooth',block:'center'});}
+        function startTracking(){setInterval(()=>{if(player&&player.getCurrentTime)updateHighlight(player.getCurrentTime()*1000);},80);}
+        function onYouTubeIframeAPIReady(){
+            player=new YT.Player('player',{width:'100%',height:'100%',videoId,playerVars:{autoplay:1},events:{
+                onReady:function(){resizePlayer();startTracking();},
+                onStateChange:function(e){if(e.data===0){}}
+            }});
+        }
+        document.getElementById('finishBtn').addEventListener('click',()=>{
+            const blue=[...document.querySelectorAll('.word-unknown')].map(el=>el.getAttribute('data-word')).filter(Boolean);
+            const unique=[...new Set(blue)];
+            if(unique.length===0){alert('No unknown words!');return;}
+            document.getElementById('modalDesc').textContent=`You have ${unique.length} unknown word(s):`;
+            document.getElementById('modalWords').innerHTML=unique.map(w=>`<span class="modal-word">${w}</span>`).join('');
+            document.getElementById('modalOverlay').classList.add('show');
+            document.querySelectorAll('#modalWords .modal-word').forEach(el=>{el.addEventListener('click',()=>{el.classList.toggle('removed');});});
+        });
+        document.getElementById('modalYes').addEventListener('click',()=>{
+            const words=[...document.querySelectorAll('#modalWords .modal-word:not(.removed)')].map(el=>el.textContent);
+            words.forEach(w=>markLearned(w));saveLearnedWords();saveSeenWords();refreshWordClasses();
+            document.getElementById('modalOverlay').classList.remove('show');
+            window.location.href='Main.html';
+        });
+        document.getElementById('modalNo').addEventListener('click',()=>{document.getElementById('modalOverlay').classList.remove('show');});
+        async function init(){
+            videoId=getVideoId();if(!videoId)return;
+            document.getElementById('placeholder').style.display='none';
+            document.getElementById('subsContainer').style.display='flex';
+            const tag=document.createElement('script');tag.src='https://www.youtube.com/iframe_api';document.head.appendChild(tag);
+            let savedLines=null;
+            try{const saved=JSON.parse(localStorage.getItem(`yt_player_videos_${learnLang}`))||[];const found=saved.find(v=>v.id===videoId);
+            if(found&&found.lines&&found.lines.length>0){savedLines=found.lines;sourceLang=found.lang||'en';document.getElementById('langInfo').textContent=`${found.trackName||found.lang} → ${learnLang}`;if(found.title&&found.title!==videoId)document.title=found.title;}}catch{}
+            if(savedLines){buildLines(savedLines);return;}
+            try{const cd=await apiFetch(`/api/captions?v=${videoId}`);const tracks=cd.tracks||[];const dl=cd.detectedLanguage||'en';sourceLang=dl;
+            if(!tracks.length){document.getElementById('noSubs').textContent='This video has no subtitles';return;}
+            const track=findBestTrack(tracks,dl);document.getElementById('langInfo').textContent=`${track.name||track.languageCode} → ${learnLang}`;
+            const sd=await apiFetch(`/api/subtitles?v=${videoId}&lang=${encodeURIComponent(track.languageCode)}`);buildLines(sd.lines||[]);
+            try{const info=await apiFetch(`/api/info?v=${videoId}`);if(info.title)document.title=info.title;}catch{}}
+            catch(e){document.getElementById('noSubs').textContent=e.message;}
+        }
+        init();
+        function resizePlayer(){
+            var area=document.querySelector('.player-area');
+            var tb=document.querySelector('.topbar');
+            var h=window.innerHeight-tb.offsetHeight-16;
+            area.style.height=h+'px';
+            if(player&&player.setSize){
+                var w=area.offsetWidth;
+                player.setSize(w,h);
+            }
+        }
+        resizePlayer();window.addEventListener('resize',resizePlayer);
+    </script>
+</body>
+</html>
