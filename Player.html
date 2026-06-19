@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Jamila Smart Listener</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%23D946A8'/><polygon points='40,28 40,72 76,50' fill='white'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -281,23 +284,34 @@
                 select.appendChild(opt);
             });
         }
+        function isWordInLang(word,lang){
+            const w=word.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+            if(!w)return false;
+            if(['en','es','de','fr','pt','it','tr','id','vi'].includes(lang))return/[a-zàâçéèêëîïôûüÿœæñßáíóúãõ]/i.test(w);
+            if(lang==='ru')return/[а-яё]/i.test(w);
+            if(lang==='ja')return/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(w);
+            if(lang==='ko')return/[\uac00-\ud7af\u1100-\u11ff]/.test(w);
+            if(lang==='zh')return/[\u4e00-\u9fff]/.test(w);
+            return false;
+        }
         function saveSeenWords(){localStorage.setItem(`yt_seen_${learnLang}`,JSON.stringify([...new Set(seenWords)]));}
         function saveLearnedWords(){localStorage.setItem(`yt_learned_${learnLang}`,JSON.stringify([...new Set(learnedWords)]));}
         function markSeen(text){
             if(sourceLang!==learnLang)return;
-            const words=text.split(/\s+/).map(w=>w.toLowerCase().replace(/[^a-zа-яё]/g,'')).filter(w=>w.length>=1);
+            const words=text.split(/\s+/).map(w=>w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')).filter(w=>w.length>=1);
             let changed=false;
             words.forEach(w=>{if(learnedWords.includes(w))return;if(!seenWords.includes(w)){seenWords.push(w);changed=true;}});
             if(changed)saveSeenWords();
         }
         function markLearned(word){
             if(sourceLang!==learnLang)return;
-            const w=word.toLowerCase().replace(/[^a-zа-яё]/g,'');if(!w)return;
+            const w=word.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');if(!w)return;
             if(!learnedWords.includes(w)){learnedWords.push(w);saveLearnedWords();}
             seenWords=seenWords.filter(s=>s!==w);saveSeenWords();
         }
         function getWordClass(word){
-            const w=word.toLowerCase().replace(/[^a-zа-яё]/g,'');
+            if(sourceLang!==learnLang)return'';
+            const w=word.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
             if(!w)return'';if(learnedWords.includes(w))return'';if(seenWords.includes(w))return'word-seen';return'word-unknown';
         }
         function getVideoId(){return new URLSearchParams(window.location.search).get('v');}
@@ -341,13 +355,14 @@
                 const div=document.createElement('div');div.className='sub-line';
                 const text=sent.text;
                 const wordsHtml=text.split(/\s+/).filter(w=>w.length>0).map(w=>{
-                    const clean=w.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g,'');
+                    const clean=w.replace(/[^\p{L}\p{N}]/gu,'');
                     return`<span class="word ${getWordClass(clean)}" data-word="${escapeHtml(clean)}">${escapeHtml(w)}</span>`;
                 }).join(' ');
                 div.innerHTML=`<span class="sub-time">${formatTime(sent.timeMs)}</span><span class="sub-text">${wordsHtml}</span><button class="sub-translate-btn" title="Translate sentence">T</button>`;
                 div.querySelectorAll('.word').forEach(wordEl=>{
                     wordEl.addEventListener('mouseup',e=>{
                         setTimeout(()=>{
+                            if(sourceLang!==learnLang){window.getSelection().removeAllRanges();return;}
                             const sel=window.getSelection();const selText=sel?sel.toString().trim():'';
                             e.stopPropagation();
                             if(selText.length>0){const r=sel.getRangeAt(0);const rc=r.getBoundingClientRect();showTranslate(selText,rc.right+8,rc.top-10);}
@@ -375,7 +390,7 @@
         }
         async function showTranslate(text,x,y){
             if(player&&player.pauseVideo)player.pauseVideo();
-            currentTranslateText=text;currentWord=text.toLowerCase().replace(/[^a-zа-яё]/g,'');
+            currentTranslateText=text;currentWord=text.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
             const popup=document.getElementById('translatePopup');
             document.getElementById('translateOriginal').textContent=text;
             document.getElementById('translateResult').innerHTML='<span class="translate-loading">Translating...</span>';
@@ -383,7 +398,9 @@
             document.getElementById('speakBtn').onclick=()=>speakWord(currentTranslateText,sourceLang);
             updateLearnBtn();
             learnBtn.onclick=()=>{
-                const words=currentTranslateText.split(/\s+/).map(w=>w.toLowerCase().replace(/[^a-zа-яё]/g,'')).filter(w=>w.length>=1);
+                if(sourceLang!==learnLang){document.getElementById('translatePopup').classList.remove('show');if(player&&player.playVideo)player.playVideo();return;}
+                const words=currentTranslateText.split(/\s+/).map(w=>w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')).filter(w=>w.length>=1);
+                if(words.length===0)return;
                 if(words.every(w=>learnedWords.includes(w))){words.forEach(w=>{learnedWords=learnedWords.filter(l=>l!==w);if(!seenWords.includes(w))seenWords.push(w);});}
                 else{words.forEach(w=>markLearned(w));}
                 saveLearnedWords();saveSeenWords();updateLearnBtn();refreshWordClasses();
@@ -402,7 +419,8 @@
         }
         function updateLearnBtn(){
             const btn=document.getElementById('learnBtn');
-            const words=currentTranslateText.split(/\s+/).map(w=>w.toLowerCase().replace(/[^a-zа-яё]/g,'')).filter(w=>w.length>=1);
+            if(sourceLang!==learnLang){btn.style.display='none';return;}btn.style.display='';
+            const words=currentTranslateText.split(/\s+/).map(w=>w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')).filter(w=>w.length>=1);
             const done=words.length>0&&words.every(w=>learnedWords.includes(w));
             btn.classList.toggle('learned',done);
         }

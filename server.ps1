@@ -314,6 +314,11 @@ while ($listener.IsListening) {
             default { 'application/octet-stream' }
         }
         $context.Response.ContentLength64 = $bytes.Length
+        if ($ext -eq '.html') {
+            $context.Response.Headers.Add('Cache-Control', 'no-cache, no-store, must-revalidate')
+            $context.Response.Headers.Add('Pragma', 'no-cache')
+            $context.Response.Headers.Add('Expires', '0')
+        }
         $context.Response.OutputStream.Write($bytes, 0, $bytes.Length)
         $context.Response.Close()
     }

@@ -526,7 +526,7 @@
             if(!text)return{blue:0,yellow:0};
             const learned=getLearnedWords();const seen=getSeenWords();
             const words=new Set();
-            text.split(/\s+/).forEach(w=>{const clean=w.toLowerCase().replace(/[^a-zа-яё]/g,'');if(clean.length>=1)words.add(clean);});
+            text.split(/\s+/).forEach(w=>{const clean=w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');if(clean.length>=1)words.add(clean);});
             let blue=0,yellow=0;
             words.forEach(w=>{if(learned.includes(w))return;if(seen.includes(w))yellow++;else blue++;});
             return{blue,yellow};
@@ -563,7 +563,7 @@
             const words = new Set();
             video.lines.forEach(l => {
                 if (l.text) l.text.split(/\s+/).forEach(w => {
-                    const clean = w.toLowerCase().replace(/[^a-zа-яё]/g, '');
+                    const clean = w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
                     if (clean.length >= 1) words.add(clean);
                 });
             });
