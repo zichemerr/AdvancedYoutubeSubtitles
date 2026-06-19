@@ -317,12 +317,14 @@
         }
         function formatTime(ms){const s=Math.floor(ms/1000);return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
         function mergeIntoSentences(lines){
-            if(!lines.length)return[];const GAP=800,MAX_WORDS=10,result=[];
+            if(!lines.length)return[];const GAP=1500,MAX_WORDS=10,result=[];
             let cur={text:lines[0].text.trim(),timeMs:lines[0].timeMs,endMs:lines[0].timeMs+(lines[0].durationMs||2000)};
             for(let i=1;i<lines.length;i++){
                 const prev=lines[i-1],curr=lines[i];
-                const gap=curr.timeMs-(prev.timeMs+(prev.durationMs||2000));
-                const br=/[.!?;:…]$/.test(cur.text.trimEnd())||gap>GAP||cur.text.trim().split(/\s+/).length>=MAX_WORDS;
+                const prevEnd=prev.timeMs+(prev.durationMs||2000);
+                const gap=curr.timeMs-prevEnd;
+                const endsWithPunct=/[.!?;:…,]$/.test(cur.text.trimEnd());
+                const br=endsWithPunct&&gap>100||gap>GAP||cur.text.trim().split(/\s+/).length>=MAX_WORDS;
                 if(!br){cur.text+=' '+curr.text.trim();cur.endMs=curr.timeMs+(curr.durationMs||2000);}
                 else{result.push(cur);cur={text:curr.text.trim(),timeMs:curr.timeMs,endMs:curr.timeMs+(curr.durationMs||2000)};}
             }
