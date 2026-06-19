@@ -79,6 +79,18 @@
         .video-delete { width: 100%; padding: 7px 0; font-size: 0.7rem; font-weight: 600; background: transparent; border: none; border-top: 1px solid #ffdbeb; color: #dd9bb3; font-family: 'Quicksand', sans-serif; cursor: pointer; transition: all 0.2s; }
         .video-delete:hover { background: #fff0f5; color: #e85c5c; }
 
+        .text-list { display: flex; gap: 14px; margin-bottom: 32px; overflow-x: auto; padding: 6px 0 16px; scroll-snap-type: x mandatory; }
+        .text-list::-webkit-scrollbar { height: 6px; }
+        .text-list::-webkit-scrollbar-track { background: #fff5f9; border-radius: 3px; }
+        .text-list::-webkit-scrollbar-thumb { background: #f2a0bb; border-radius: 3px; }
+        .text-card { display: flex; flex-direction: column; width: 280px; flex-shrink: 0; background: #ffffffea; border: 1px solid #ffdbeb; border-radius: 20px; padding: 16px; cursor: pointer; transition: all 0.2s; scroll-snap-align: start; box-shadow: 0 4px 12px rgba(233, 120, 158, 0.08); }
+        .text-card:hover { border-color: #f2a0bb; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(233, 120, 158, 0.15); }
+        .text-preview { font-size: 0.82rem; color: #75556b; line-height: 1.5; margin-bottom: 10px; max-height: 60px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .text-meta { font-size: 0.7rem; color: #d47599; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .text-meta .lang-tag { background: #ffeef4; padding: 2px 8px; border-radius: 20px; font-weight: 600; color: #c26889; border: 1px solid #ffd9e7; }
+        .text-delete { width: 100%; padding: 7px 0; font-size: 0.7rem; font-weight: 600; background: transparent; border: none; border-top: 1px solid #ffdbeb; color: #dd9bb3; font-family: 'Quicksand', sans-serif; cursor: pointer; transition: all 0.2s; border-radius: 0 0 20px 20px; }
+        .text-delete:hover { background: #fff0f5; color: #e85c5c; }
+
         .dict-card { background: #ffffffea; border: 1px solid #ffdbeb; border-radius: 24px; overflow: hidden; box-shadow: 0 8px 20px rgba(233, 120, 158, 0.08); }
         .dict-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; cursor: pointer; transition: background 0.2s; }
         .dict-header:hover { background: #fff8fb; }
@@ -175,6 +187,15 @@
         body.dark .video-meta .lang-tag { background: #282828; color: #aaa; }
         body.dark .video-delete { border-top-color: #282828; color: #555; }
         body.dark .video-delete:hover { background: rgba(255,107,107,0.08); color: #FF6B6B; }
+        body.dark .text-list::-webkit-scrollbar-track { background: #1a1a1a; }
+        body.dark .text-list::-webkit-scrollbar-thumb { background: #D946A8; }
+        body.dark .text-card { background: #1a1a1a; border-color: #282828; }
+        body.dark .text-card:hover { border-color: #D946A8; }
+        body.dark .text-preview { color: #ccc; }
+        body.dark .text-meta { color: #888; }
+        body.dark .text-meta .lang-tag { background: #282828; color: #aaa; }
+        body.dark .text-delete { border-top-color: #282828; color: #555; }
+        body.dark .text-delete:hover { background: rgba(255,107,107,0.08); color: #FF6B6B; }
         body.dark .dict-card { background: #1a1a1a; border-color: #282828; }
         body.dark .dict-header:hover { background: #222; }
         body.dark .dict-stat .num { color: #fff; }
@@ -267,6 +288,11 @@
             <button class="btn-ghost" onclick="clearList()">Clear</button>
         </div>
         <div class="video-list" id="videoList"></div>
+        <div class="section-header" id="textsHeader" style="display:none;">
+            <span class="section-title">My Texts</span>
+            <button class="btn-ghost" onclick="clearTexts()">Clear</button>
+        </div>
+        <div class="text-list" id="textList"></div>
         <div class="dict-card" id="dictSection">
             <div class="dict-header" onclick="openDictFullscreen()">
                 <span class="section-title">Vocabulary</span>
@@ -335,6 +361,7 @@
                 (APP_CONFIG.languages.supported || []).forEach(l => { FLAGS[l.code] = l.flag; });
                 buildLanguageDropdown();
                 renderList();
+                renderTexts();
                 renderDict();
                 updateOldTitles();
             } catch(e) {
@@ -403,7 +430,7 @@
         function closeDictFullscreen() { document.getElementById('dictOverlay').classList.remove('open'); }
         const learnLangSelect = document.getElementById('learnLang');
         learnLangSelect.value = getLearnLang();
-        learnLangSelect.addEventListener('change', e => { setLearnLang(e.target.value); renderList(); renderDict(); });
+        learnLangSelect.addEventListener('change', e => { setLearnLang(e.target.value); renderList(); renderTexts(); renderDict(); });
         function getStorageKey() { return `yt_player_videos_${getLearnLang()}`; }
         function getSavedVideos() { try { return JSON.parse(localStorage.getItem(getStorageKey())) || []; } catch { return []; } }
         function saveVideos(videos) { try { localStorage.setItem(getStorageKey(), JSON.stringify(videos)); return true; } catch { return false; } }
@@ -479,8 +506,47 @@
             const text=document.getElementById('textInput').value.trim();
             if(!text){document.getElementById('error').textContent='Please enter some text';document.getElementById('error').style.display='block';return;}
             document.getElementById('error').style.display='none';
-            localStorage.setItem('yt_reader_text',text);
-            window.location.href=`Reader.html?lang=${getLearnLang()}`;
+            const lang=getLearnLang();
+            const texts=getSavedTexts(lang);
+            const id='t_'+Date.now();
+            const preview=text.replace(/\s+/g,' ').slice(0,80);
+            const wordCount=text.split(/\s+/).filter(w=>w.length>0).length;
+            texts.unshift({id,text,preview,wordCount,savedAt:Date.now()});
+            saveTexts(lang,texts);
+            document.getElementById('textInput').value='';
+            window.location.href=`Reader.html?id=${id}&lang=${lang}`;
+        }
+        function getTextStorageKey(lang){return `yt_texts_${lang}`;}
+        function getSavedTexts(lang){try{return JSON.parse(localStorage.getItem(getTextStorageKey(lang)))||[];}catch{return[];}}
+        function saveTexts(lang,texts){try{localStorage.setItem(getTextStorageKey(lang),JSON.stringify(texts));return true;}catch{return false;}}
+        function openText(id){window.location.href=`Reader.html?id=${id}&lang=${getLearnLang()}`;}
+        function deleteText(id,e){e.stopPropagation();const lang=getLearnLang();saveTexts(lang,getSavedTexts(lang).filter(t=>t.id!==id));renderTexts();}
+        function clearTexts(){if(!confirm('Delete all saved texts?'))return;localStorage.removeItem(getTextStorageKey(getLearnLang()));renderTexts();}
+        function getTextWordStats(text){
+            if(!text)return{blue:0,yellow:0};
+            const learned=getLearnedWords();const seen=getSeenWords();
+            const words=new Set();
+            text.split(/\s+/).forEach(w=>{const clean=w.toLowerCase().replace(/[^a-zа-яё]/g,'');if(clean.length>=1)words.add(clean);});
+            let blue=0,yellow=0;
+            words.forEach(w=>{if(learned.includes(w))return;if(seen.includes(w))yellow++;else blue++;});
+            return{blue,yellow};
+        }
+        function renderTexts(){
+            const lang=getLearnLang();
+            const texts=getSavedTexts(lang);
+            const list=document.getElementById('textList');
+            const header=document.getElementById('textsHeader');
+            if(texts.length===0){header.style.display='none';list.innerHTML='';return;}
+            header.style.display='flex';
+            list.innerHTML=texts.map(t=>{
+                const s=getTextWordStats(t.text);
+                return`
+                <div class="text-card" onclick="openText('${t.id}')">
+                    <div class="text-preview">${escHtml(t.preview)}</div>
+                    <div class="text-meta"><span class="lang-tag">${lang}</span><span>${t.wordCount} words</span></div>
+                    <button class="text-delete" onclick="deleteText('${t.id}',event)">Delete</button>
+                </div>`;
+            }).join('');
         }
         function formatDuration(sec){
             if(!sec||sec<=0)return'';

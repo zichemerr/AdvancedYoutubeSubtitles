@@ -391,12 +391,17 @@
         document.getElementById('modalNo').addEventListener('click',()=>{document.getElementById('modalOverlay').classList.remove('show');});
 
         async function init(){
-            const text=localStorage.getItem('yt_reader_text');
-            const lang=new URLSearchParams(window.location.search).get('lang');
+            const params=new URLSearchParams(window.location.search);
+            const id=params.get('id');
+            const lang=params.get('lang');
             if(lang) learnLang=lang;
             document.getElementById('langInfo').textContent=`Reading \u2022 ${learnLang}`;
+            let text='';
+            if(id){
+                try{const texts=JSON.parse(localStorage.getItem(`yt_texts_${learnLang}`))||[];const found=texts.find(t=>t.id===id);if(found)text=found.text;}catch{}
+            }
+            if(!text) text=localStorage.getItem('yt_reader_text')||'';
             if(text){
-                document.getElementById('placeholder')?.remove();
                 document.getElementById('finishBtn').style.display='block';
                 buildReader(text);
                 localStorage.removeItem('yt_reader_text');
