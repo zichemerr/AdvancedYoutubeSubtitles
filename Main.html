@@ -121,68 +121,6 @@
         .dict-clear-btn { padding: 5px 14px; font-size: 0.7rem; font-weight: 600; border-radius: 40px; border: 1px solid #ffc7dd; background: transparent; color: #d47599; font-family: 'Quicksand', sans-serif; cursor: pointer; transition: all 0.2s; }
         .dict-clear-btn:hover { background: #ffe0ec; border-color: #f2a0bb; }
 
-        .theme-toggle { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #ffc7dd; background: transparent; color: #d47599; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
-        .theme-toggle:hover { background: #ffe0ec; border-color: #f2a0bb; }
-
-        body.dark { background: #111; color: #e0d0d8; }
-        body.dark::before { content: ""; }
-        body.dark .topbar { background: rgba(26, 26, 26, 0.92); border-bottom: 1px solid #282828; }
-        body.dark .topbar-brand { background: linear-gradient(135deg, #f07c9c, #e46b8f, #c95a7a); background-clip: text; -webkit-background-clip: text; color: transparent; }
-        body.dark .vocab-badge { background: #222; border-color: #333; color: #aaa; }
-        body.dark .vocab-badge .count { color: #D946A8; }
-        body.dark .theme-toggle { border-color: #444; color: #aaa; }
-        body.dark .theme-toggle:hover { background: rgba(217, 70, 168, 0.1); border-color: #D946A8; color: #D946A8; }
-        body.dark .hero h1 { background: linear-gradient(135deg, #f07c9c, #e46b8f, #c95a7a); background-clip: text; -webkit-background-clip: text; color: transparent; }
-        body.dark .hero p { color: #888; }
-        body.dark input[type="text"] { background: #1a1a1a; border-color: #333; color: #fff; }
-        body.dark input[type="text"]:focus { border-color: #D946A8; background: #1a1a1a; }
-        body.dark input[type="text"]::placeholder { color: #666; }
-        body.dark .btn-primary { background: #D946A8; box-shadow: none; }
-        body.dark .btn-primary:hover { background: #C0359A; }
-        body.dark .btn-primary:disabled { background: #333; color: #666; }
-        body.dark .error { color: #FF6B6B; }
-        body.dark .status { color: #888; }
-        body.dark .settings-row label { color: #aaa; }
-        body.dark .settings-select { background: #1a1a1a; border-color: #333; color: #fff; }
-        body.dark .settings-select:hover { background: #222; border-color: #555; }
-        body.dark .section-title { color: #777; }
-        body.dark .btn-ghost { border-color: #444; color: #777; }
-        body.dark .btn-ghost:hover { border-color: #FF6B6B; color: #FF6B6B; background: rgba(255,107,107,0.05); }
-        body.dark .video-list::-webkit-scrollbar-track { background: #1a1a1a; }
-        body.dark .video-list::-webkit-scrollbar-thumb { background: #D946A8; }
-        body.dark .video-card { background: #1a1a1a; border-color: #282828; }
-        body.dark .video-card:hover { border-color: #D946A8; }
-        body.dark .video-title { color: #fff; }
-        body.dark .video-meta { color: #888; }
-        body.dark .video-meta .lang-tag { background: #282828; color: #aaa; }
-        body.dark .video-delete { border-top-color: #282828; color: #555; }
-        body.dark .video-delete:hover { background: rgba(255,107,107,0.08); color: #FF6B6B; }
-        body.dark .dict-card { background: #1a1a1a; border-color: #282828; }
-        body.dark .dict-header:hover { background: #222; }
-        body.dark .dict-stat .num { color: #fff; }
-        body.dark .dict-stat .label { color: #777; }
-        body.dark .dict-overlay { background: #111; }
-        body.dark .dict-topbar { background: #1a1a1a; border-bottom-color: #282828; }
-        body.dark .dict-close { border-color: #333; color: #aaa; }
-        body.dark .dict-close:hover { border-color: #D946A8; color: #D946A8; }
-        body.dark .dict-content::-webkit-scrollbar-thumb { background: #444; }
-        body.dark .dict-group-title { color: #777; }
-        body.dark .dict-words::-webkit-scrollbar-thumb { background: #444; }
-        body.dark .dict-word { color: #fff; }
-        body.dark .dict-word.seen { background: rgba(255, 200, 0, 0.12); border-color: rgba(255, 200, 0, 0.35); }
-        body.dark .dict-word.seen:hover { background: rgba(255, 200, 0, 0.2); border-color: rgba(255, 200, 0, 0.6); }
-        body.dark .dict-word.learned { background: rgba(88, 204, 2, 0.12); border-color: rgba(88, 204, 2, 0.35); }
-        body.dark .dict-word.learned:hover { background: rgba(255, 107, 107, 0.12); border-color: rgba(255, 107, 107, 0.4); color: #FF6B6B; }
-        body.dark .dict-empty { color: #555; }
-        body.dark .dict-clear-btn { border-color: #444; color: #777; }
-        body.dark .dict-clear-btn:hover { border-color: #FF6B6B; color: #FF6B6B; background: rgba(255,107,107,0.05); }
-        body.dark .modal-overlay { background: rgba(0,0,0,0.7); }
-        body.dark .modal-box { background: #1a1a1a; border-color: #333; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
-        body.dark .modal-title { color: #fff; }
-        body.dark .modal-desc { color: #999; }
-        body.dark .modal-btn-no { background: #333; color: #aaa; border-color: #444; }
-        body.dark .modal-btn-no:hover { background: #444; color: #fff; }
-
         @media (max-width: 700px) {
             .main { padding: 16px 12px 40px; }
             .video-card { width: 300px; }
@@ -196,13 +134,10 @@
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect rx="8" width="28" height="28" fill="#f2a0bb"/><polygon points="11,7 11,21 22,14" fill="white"/></svg>
             Jamila Smart Listener
         </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-            <div class="vocab-badge" id="vocabBadge">
-                <img class="flag" id="vocabFlag" src="" alt="flag">
-                <span class="count" id="vocabCount">0</span>
-                <span>learned</span>
-            </div>
-            <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+        <div class="vocab-badge" id="vocabBadge">
+            <img class="flag" id="vocabFlag" src="" alt="flag">
+            <span class="count" id="vocabCount">0</span>
+            <span>learned</span>
         </div>
     </div>
     <div class="main">
@@ -282,19 +217,6 @@
         </div>
     </div>
     <script>
-        const THEME_KEY='yt_theme';
-        function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
-        function applyTheme(theme){
-            document.body.classList.toggle('dark',theme==='dark');
-            document.getElementById('themeToggle').textContent=theme==='dark'?'☀️':'🌙';
-        }
-        applyTheme(getTheme());
-        document.getElementById('themeToggle').addEventListener('click',()=>{
-            const next=getTheme()==='dark'?'light':'dark';
-            localStorage.setItem(THEME_KEY,next);
-            applyTheme(next);
-        });
-
         const LEARN_LANG_KEY = 'yt_learn_lang';
         const FLAGS = { en:'us', ru:'ru', es:'es', de:'de', fr:'fr', ja:'jp', ko:'kr', zh:'cn', pt:'pt', it:'it', tr:'tr', id:'id', vi:'vn' };
         function getLearnLang() { return localStorage.getItem(LEARN_LANG_KEY) || 'en'; }
