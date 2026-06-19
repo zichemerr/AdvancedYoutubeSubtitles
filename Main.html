@@ -23,10 +23,21 @@
         .hero h1 { font-size: 1.8rem; font-weight: 700; background: linear-gradient(135deg, #f07c9c, #e46b8f, #c95a7a); background-clip: text; -webkit-background-clip: text; color: transparent; margin-bottom: 6px; }
         .hero p { font-size: 0.85rem; color: #e38bab; font-weight: 500; }
 
+        .input-tabs { display: flex; gap: 0; margin-bottom: 10px; border-radius: 40px; overflow: hidden; border: 1.5px solid #ffc7dd; background: #fff7fa; }
+        .input-tab { flex: 1; padding: 10px 16px; border: none; background: transparent; color: #d47599; font-size: 0.85rem; font-weight: 600; font-family: 'Quicksand', sans-serif; cursor: pointer; transition: all 0.2s; }
+        .input-tab.active { background: #f2a0bb; color: #fff; }
+        .input-tab:not(.active):hover { background: #ffe0ec; }
         .input-card { display: flex; gap: 10px; margin-bottom: 10px; }
+        .input-card.hidden { display: none; }
         input[type="text"] { flex: 1; padding: 12px 18px; border: 1.5px solid #ffc7dd; border-radius: 40px; background: #fff7fa; color: #6a4e60; font-size: 0.9rem; font-family: 'Quicksand', sans-serif; font-weight: 500; outline: none; transition: all 0.2s; }
         input[type="text"]:focus { border-color: #f5a2bf; background: #ffffff; box-shadow: 0 4px 12px rgba(242,160,187,0.2); }
         input[type="text"]::placeholder { color: #dd9bb3; }
+        .text-input-area { display: none; margin-bottom: 10px; }
+        .text-input-area.show { display: block; }
+        .text-input-area textarea { width: 100%; min-height: 120px; padding: 14px 18px; border: 1.5px solid #ffc7dd; border-radius: 20px; background: #fff7fa; color: #6a4e60; font-size: 0.9rem; font-family: 'Quicksand', sans-serif; font-weight: 500; outline: none; transition: all 0.2s; resize: vertical; line-height: 1.5; }
+        .text-input-area textarea:focus { border-color: #f5a2bf; background: #ffffff; box-shadow: 0 4px 12px rgba(242,160,187,0.2); }
+        .text-input-area textarea::placeholder { color: #dd9bb3; }
+        .text-actions { display: flex; gap: 10px; margin-top: 8px; justify-content: flex-end; }
 
         .btn-primary { padding: 12px 24px; border: none; border-radius: 40px; background: #f2a0bb; color: #fff; font-size: 0.9rem; font-weight: 600; font-family: 'Quicksand', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap; box-shadow: 0 2px 5px #f4bfd1; }
         .btn-primary:hover { background: #e885a5; transform: translateY(-2px); }
@@ -137,6 +148,13 @@
         body.dark input[type="text"] { background: #1a1a1a; border-color: #333; color: #fff; }
         body.dark input[type="text"]:focus { border-color: #D946A8; background: #1a1a1a; }
         body.dark input[type="text"]::placeholder { color: #666; }
+        body.dark .input-tabs { background: #1a1a1a; border-color: #333; }
+        body.dark .input-tab { color: #888; }
+        body.dark .input-tab.active { background: #D946A8; color: #fff; }
+        body.dark .input-tab:not(.active):hover { background: #222; }
+        body.dark .text-input-area textarea { background: #1a1a1a; border-color: #333; color: #fff; }
+        body.dark .text-input-area textarea:focus { border-color: #D946A8; background: #1a1a1a; }
+        body.dark .text-input-area textarea::placeholder { color: #666; }
         body.dark .btn-primary { background: #D946A8; box-shadow: none; }
         body.dark .btn-primary:hover { background: #C0359A; }
         body.dark .btn-primary:disabled { background: #333; color: #666; }
@@ -210,9 +228,19 @@
             <h1>Learn a language with videos</h1>
             <p>Paste a YouTube link and start learning new words</p>
         </div>
-        <div class="input-card">
+        <div class="input-tabs">
+            <button class="input-tab active" id="tabUrl" onclick="switchTab('url')">YouTube</button>
+            <button class="input-tab" id="tabText" onclick="switchTab('text')">Paste text</button>
+        </div>
+        <div class="input-card" id="urlSection">
             <input type="text" id="urlInput" placeholder="Paste a YouTube video link..." autofocus>
             <button class="btn-primary" id="loadBtn" onclick="loadVideo()">Open</button>
+        </div>
+        <div class="text-input-area" id="textSection">
+            <textarea id="textInput" placeholder="Paste or type your text here..."></textarea>
+            <div class="text-actions">
+                <button class="btn-primary" id="readBtn" onclick="openReader()">Read</button>
+            </div>
         </div>
         <div class="error" id="error">Invalid link</div>
         <div class="status" id="status"></div>
@@ -439,6 +467,21 @@
         function clearList() { document.getElementById('clearModal').classList.add('show'); }
         document.getElementById('clearConfirm').addEventListener('click', () => { localStorage.removeItem(getStorageKey()); document.getElementById('clearModal').classList.remove('show'); renderList(); });
         function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+        function switchTab(tab){
+            document.getElementById('tabUrl').classList.toggle('active',tab==='url');
+            document.getElementById('tabText').classList.toggle('active',tab==='text');
+            document.getElementById('urlSection').classList.toggle('hidden',tab==='text');
+            document.getElementById('textSection').classList.toggle('show',tab==='text');
+            document.getElementById('error').style.display='none';
+            if(tab==='text') document.getElementById('textInput').focus();
+        }
+        function openReader(){
+            const text=document.getElementById('textInput').value.trim();
+            if(!text){document.getElementById('error').textContent='Please enter some text';document.getElementById('error').style.display='block';return;}
+            document.getElementById('error').style.display='none';
+            localStorage.setItem('yt_reader_text',text);
+            window.location.href=`Reader.html?lang=${getLearnLang()}`;
+        }
         function formatDuration(sec){
             if(!sec||sec<=0)return'';
             const h=Math.floor(sec/3600);
