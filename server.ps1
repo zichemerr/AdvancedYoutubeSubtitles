@@ -14,11 +14,27 @@ $YtDlp      = Join-Path $PSScriptRoot $ytdlpPath
 
 $listener = [System.Net.HttpListener]::new()
 $listener.Prefixes.Add("http://${bindHost}:${port}/")
+try {
+    $hostName = [System.Net.Dns]::GetHostName()
+    $allIPs = [System.Net.Dns]::GetHostAddresses($hostName)
+    foreach ($ip in $allIPs) {
+        if ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork -and $ip.IPAddressToString -ne '127.0.0.1') {
+            try { $listener.Prefixes.Add("http://$($ip.IPAddressToString):${port}/") } catch {}
+        }
+    }
+} catch {}
 $listener.Start()
 
 Write-Host "Server running at http://${bindHost}:${port}/Main.html"
-Write-Host "yt-dlp: $YtDlp"
-Write-Host "Config: $configPath"
+try {
+    $hostName = [System.Net.Dns]::GetHostName()
+    $allIPs = [System.Net.Dns]::GetHostAddresses($hostName)
+    foreach ($ip in $allIPs) {
+        if ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork -and $ip.IPAddressToString -ne '127.0.0.1') {
+            Write-Host "Phone: http://$($ip.IPAddressToString):${port}/Main.html"
+        }
+    }
+} catch {}
 Write-Host "Press Ctrl+C to stop"
 
 function Send-Json($context, $obj, $code = 200) {

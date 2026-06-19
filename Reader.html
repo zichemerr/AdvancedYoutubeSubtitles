@@ -248,6 +248,7 @@
             if(lang==='ja')return/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(w);
             if(lang==='ko')return/[\uac00-\ud7af\u1100-\u11ff]/.test(w);
             if(lang==='zh')return/[\u4e00-\u9fff]/.test(w);
+            if(lang==='ar')return/[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/.test(w);
             return false;
         }
         function saveSeenWords(){localStorage.setItem(`yt_seen_${learnLang}`,JSON.stringify([...new Set(seenWords)]));}

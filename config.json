@@ -29,7 +29,8 @@
       { "code": "it", "name": "Italiano",    "flag": "it" },
       { "code": "tr", "name": "Türkçe",      "flag": "tr" },
       { "code": "id", "name": "Bahasa Indonesia", "flag": "id" },
-      { "code": "vi", "name": "Tiếng Việt",  "flag": "vn" }
+      { "code": "vi", "name": "Tiếng Việt",  "flag": "vn" },
+      { "code": "ar", "name": "العربية",     "flag": "sa" }
     ]
   },
   "apis": {
