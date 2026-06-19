@@ -139,6 +139,20 @@ while ($listener.IsListening) {
         continue
     }
 
+    if ($path -eq '/api/duration') {
+        $vid = Get-QueryParam $context 'v'
+        if (-not $vid) { Send-Error $context 'Missing ?v= parameter' 400; continue }
+        $timeout = if ($cfg.ytdlp.timeoutInfo) { $cfg.ytdlp.timeoutInfo } else { 15 }
+        $result = Run-YtDlp @("--skip-download","--print","duration","--",$vid) $timeout
+        if ($result.exitCode -eq 0 -and $result.stdout.Trim()) {
+            $dur = $result.stdout.Trim().Split("`n")[0].Trim()
+            Send-Json $context @{duration=$dur; id=$vid}
+        } else {
+            Send-Json $context @{duration="0"; id=$vid}
+        }
+        continue
+    }
+
     if ($path -eq '/api/captions') {
         $vid = Get-QueryParam $context 'v'
         if (-not $vid) { Send-Error $context 'Missing ?v= parameter' 400; continue }

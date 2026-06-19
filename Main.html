@@ -424,9 +424,10 @@
                     subsLines = subsData.lines || [];
                 }
                 setStatus('<span class="spinner"></span>Fetching video title...');
-                let title = id;
+                let title = id, duration = 0;
                 try { const info = await apiFetch(`/api/info?v=${id}`); if (info.title) title = info.title; } catch {}
-                const video = { id, title, thumb: `https://img.youtube.com/vi/${id}/mqdefault.jpg`, lang: detectedLang, trackName, subCount: subsLines.length, lines: subsLines, savedAt: Date.now() };
+                try { const dur = await apiFetch(`/api/duration?v=${id}`); if (dur.duration) duration = Math.floor(parseFloat(dur.duration)); } catch {}
+                const video = { id, title, thumb: `https://img.youtube.com/vi/${id}/mqdefault.jpg`, lang: detectedLang, trackName, subCount: subsLines.length, lines: subsLines, duration, savedAt: Date.now() };
                 const videos = getSavedVideos(); videos.unshift(video);
                 if (!saveVideos(videos)) { setStatus(''); error.textContent = 'Storage full. Delete some videos.'; error.style.display = 'block'; btn.disabled = false; btn.textContent = 'Open'; return; }
                 setStatus(''); window.location.href = `Player.html?v=${id}&lang=${getLearnLang()}`;
@@ -438,6 +439,14 @@
         function clearList() { document.getElementById('clearModal').classList.add('show'); }
         document.getElementById('clearConfirm').addEventListener('click', () => { localStorage.removeItem(getStorageKey()); document.getElementById('clearModal').classList.remove('show'); renderList(); });
         function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+        function formatDuration(sec){
+            if(!sec||sec<=0)return'';
+            const h=Math.floor(sec/3600);
+            const m=Math.floor((sec%3600)/60);
+            const s=sec%60;
+            if(h>0)return`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            return`${m}:${String(s).padStart(2,'0')}`;
+        }
         function getVideoWordStats(video) {
             if (!video.lines || !video.lines.length) return { blue: 0, yellow: 0 };
             const learned = getLearnedWords();
@@ -470,7 +479,7 @@
                     <div class="video-thumb"><img src="${v.thumb}" alt="" loading="lazy"></div>
                     <div class="video-info">
                         <div class="video-title">${escHtml(v.title)}</div>
-                        <div class="video-meta"><span class="lang-tag">${v.trackName || v.lang}</span><span>${v.subCount} lines</span></div>
+                        <div class="video-meta"><span class="lang-tag">${v.trackName || v.lang}</span><span>${v.subCount} lines</span>${v.duration?`<span>⏱ ${formatDuration(v.duration)}</span>`:''}</div>
                         <div class="video-words"><span class="vw blue">🔵 ${s.blue}</span><span class="vw yellow">🟡 ${s.yellow}</span></div>
                     </div>
                     <button class="video-delete" onclick="deleteVideo('${v.id}', event)">Delete</button>
@@ -485,6 +494,11 @@
             for(const v of videos){
                 if(v.title&&v.title!==v.id)continue;
                 try{const info=await apiFetch(`/api/info?v=${v.id}`);if(info.title&&info.title!==v.id){v.title=info.title;changed=true;}}
+                catch{}
+            }
+            for(const v of videos){
+                if(v.duration)continue;
+                try{const dur=await apiFetch(`/api/duration?v=${v.id}`);if(dur.duration){v.duration=Math.floor(parseFloat(dur.duration));changed=true;}}
                 catch{}
             }
             if(changed){saveVideos(videos);renderList();}
