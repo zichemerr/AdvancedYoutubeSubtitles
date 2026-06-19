@@ -1,0 +1,49 @@
+{
+  "server": {
+    "port": 8080,
+    "host": "localhost"
+  },
+  "ytdlp": {
+    "path": "tools/yt-dlp.exe",
+    "timeoutInfo": 15,
+    "timeoutCaptions": 30,
+    "timeoutSubtitles": 60
+  },
+  "app": {
+    "brandName": "Jamila Smart Listener",
+    "maxSavedVideos": 10
+  },
+  "languages": {
+    "defaultLearnLang": "en",
+    "defaultTargetLang": "ru",
+    "supported": [
+      { "code": "en", "name": "English",    "flag": "us" },
+      { "code": "ru", "name": "Русский",     "flag": "ru" },
+      { "code": "es", "name": "Español",     "flag": "es" },
+      { "code": "de", "name": "Deutsch",     "flag": "de" },
+      { "code": "fr", "name": "Français",    "flag": "fr" },
+      { "code": "ja", "name": "日本語",       "flag": "jp" },
+      { "code": "ko", "name": "한국어",       "flag": "kr" },
+      { "code": "zh", "name": "中文",         "flag": "cn" },
+      { "code": "pt", "name": "Português",   "flag": "pt" },
+      { "code": "it", "name": "Italiano",    "flag": "it" },
+      { "code": "tr", "name": "Türkçe",      "flag": "tr" },
+      { "code": "id", "name": "Bahasa Indonesia", "flag": "id" },
+      { "code": "vi", "name": "Tiếng Việt",  "flag": "vn" }
+    ]
+  },
+  "apis": {
+    "translate": {
+      "url": "https://translate.googleapis.com/translate_a/single",
+      "client": "gtx"
+    },
+    "tts": {
+      "url": "https://translate.google.com/translate_tts",
+      "client": "tw-ob"
+    },
+    "synonyms": {
+      "url": "https://api.datamuse.com/words",
+      "maxResults": 8
+    }
+  }
+}

@@ -296,8 +296,41 @@
         });
 
         const LEARN_LANG_KEY = 'yt_learn_lang';
-        const FLAGS = { en:'us', ru:'ru', es:'es', de:'de', fr:'fr', ja:'jp', ko:'kr', zh:'cn', pt:'pt', it:'it', tr:'tr', id:'id', vi:'vn' };
-        function getLearnLang() { return localStorage.getItem(LEARN_LANG_KEY) || 'en'; }
+        let APP_CONFIG = null;
+        let FLAGS = {};
+
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/config');
+                APP_CONFIG = await res.json();
+                FLAGS = {};
+                (APP_CONFIG.languages.supported || []).forEach(l => { FLAGS[l.code] = l.flag; });
+                buildLanguageDropdown();
+                renderList();
+                renderDict();
+                updateOldTitles();
+            } catch(e) {
+                console.error('Failed to load config:', e);
+            }
+        }
+
+        function buildLanguageDropdown() {
+            const select = document.getElementById('learnLang');
+            const langs = APP_CONFIG.languages.supported || [];
+            const current = getLearnLang();
+            select.innerHTML = '';
+            langs.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.code;
+                opt.textContent = l.name;
+                select.appendChild(opt);
+            });
+            select.value = current;
+        }
+
+        function getMaxVideos() { return (APP_CONFIG && APP_CONFIG.app && APP_CONFIG.app.maxSavedVideos) || 10; }
+        function getDefaultLearnLang() { return (APP_CONFIG && APP_CONFIG.languages && APP_CONFIG.languages.defaultLearnLang) || 'en'; }
+        function getLearnLang() { return localStorage.getItem(LEARN_LANG_KEY) || getDefaultLearnLang(); }
         function setLearnLang(lang) { localStorage.setItem(LEARN_LANG_KEY, lang); }
         function getSeenWords() { try { return JSON.parse(localStorage.getItem(`yt_seen_${getLearnLang()}`)) || []; } catch { return []; } }
         function getLearnedWords() { try { return JSON.parse(localStorage.getItem(`yt_learned_${getLearnLang()}`)) || []; } catch { return []; } }
@@ -375,7 +408,7 @@
             error.style.display = 'none';
             const existing = getSavedVideos().find(v => v.id === id);
             if (existing) { window.location.href = `Player.html?v=${id}&lang=${getLearnLang()}`; return; }
-            if (getSavedVideos().length >= 10) { error.textContent = 'Maximum 10 videos. Delete one first.'; error.style.display = 'block'; return; }
+            if (getSavedVideos().length >= getMaxVideos()) { error.textContent = `Maximum ${getMaxVideos()} videos. Delete one first.`; error.style.display = 'block'; return; }
             btn.disabled = true; btn.textContent = 'Loading...';
             setStatus('<span class="spinner"></span>Loading video info...');
             try {
@@ -445,8 +478,9 @@
             }).join('');
         }
         document.getElementById('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') loadVideo(); });
-        renderList(); renderDict();
-        (async function updateOldTitles(){
+        loadConfig();
+        async function updateOldTitles(){
+            if (!APP_CONFIG) return;
             const videos=getSavedVideos();let changed=false;
             for(const v of videos){
                 if(v.title&&v.title!==v.id)continue;
@@ -454,7 +488,7 @@
                 catch{}
             }
             if(changed){saveVideos(videos);renderList();}
-        })();
+        }
     </script>
 </body>
 </html>

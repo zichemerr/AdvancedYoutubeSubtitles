@@ -201,9 +201,7 @@
             <button class="learn-btn" id="learnBtn" title="Mark as learned">✓ Learned</button>
             <button class="speak-btn" id="speakBtn" title="Listen">🔊</button>
             <a class="gtranslate-btn" id="gtranslateBtn" href="#" target="_blank" rel="noopener">Yandex</a>
-            <select class="lang-select" id="langSelect">
-                <option value="ru">Русский</option><option value="en">English</option><option value="es">Español</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="zh">中文</option><option value="pt">Português</option><option value="it">Italiano</option><option value="tr">Türkçe</option><option value="id">Bahasa Indonesia</option><option value="vi">Tiếng Việt</option><option value="ar">العربية</option><option value="hi">हिन्दी</option>
-            </select>
+            <select class="lang-select" id="langSelect"></select>
         </div>
     </div>
     <div class="modal-overlay" id="modalOverlay">
@@ -232,13 +230,44 @@
         });
 
         let player=null,subLines=[],videoId=null,lastIdx=-1,sourceLang='en';
-        const targetLangKey='yt_player_target_lang';let targetLang=localStorage.getItem(targetLangKey)||'ru';
+        let APP_CONFIG=null;
+        const targetLangKey='yt_player_target_lang';
         const LEARN_LANG_KEY='yt_learn_lang';
-        let learnLang=new URLSearchParams(window.location.search).get('lang')||localStorage.getItem(LEARN_LANG_KEY)||'en';
-        localStorage.setItem(LEARN_LANG_KEY,learnLang);
-        let seenWords=JSON.parse(localStorage.getItem(`yt_seen_${learnLang}`)||'[]');
-        let learnedWords=JSON.parse(localStorage.getItem(`yt_learned_${learnLang}`)||'[]');
+        let targetLang = localStorage.getItem(targetLangKey) || 'ru';
+        let learnLang = new URLSearchParams(window.location.search).get('lang') || localStorage.getItem(LEARN_LANG_KEY) || 'en';
+        localStorage.setItem(LEARN_LANG_KEY, learnLang);
+        let seenWords = JSON.parse(localStorage.getItem(`yt_seen_${learnLang}`) || '[]');
+        let learnedWords = JSON.parse(localStorage.getItem(`yt_learned_${learnLang}`) || '[]');
         let currentWord='';
+
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/config');
+                APP_CONFIG = await res.json();
+                targetLang = localStorage.getItem(targetLangKey) || getDefaultTargetLang();
+                learnLang = new URLSearchParams(window.location.search).get('lang') || localStorage.getItem(LEARN_LANG_KEY) || getDefaultLearnLang();
+                localStorage.setItem(LEARN_LANG_KEY, learnLang);
+                buildLangSelect();
+                document.getElementById('langSelect').value = targetLang;
+            } catch(e) {
+                console.error('Failed to load config:', e);
+            }
+        }
+
+        function getDefaultTargetLang() { return (APP_CONFIG && APP_CONFIG.languages && APP_CONFIG.languages.defaultTargetLang) || 'ru'; }
+        function getDefaultLearnLang() { return (APP_CONFIG && APP_CONFIG.languages && APP_CONFIG.languages.defaultLearnLang) || 'en'; }
+
+        function buildLangSelect() {
+            const select = document.getElementById('langSelect');
+            const langs = (APP_CONFIG && APP_CONFIG.languages && APP_CONFIG.languages.supported) || [];
+            select.innerHTML = '';
+            langs.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.code;
+                opt.textContent = l.name;
+                select.appendChild(opt);
+            });
+        }
         function saveSeenWords(){localStorage.setItem(`yt_seen_${learnLang}`,JSON.stringify([...new Set(seenWords)]));}
         function saveLearnedWords(){localStorage.setItem(`yt_learned_${learnLang}`,JSON.stringify([...new Set(learnedWords)]));}
         function markSeen(text){
@@ -453,6 +482,7 @@
             try{const info=await apiFetch(`/api/info?v=${videoId}`);if(info.title)document.title=info.title;}catch{}}
             catch(e){document.getElementById('noSubs').textContent=e.message;}
         }
+        loadConfig();
         init();
         function resizePlayer(){
             var area=document.querySelector('.player-area');

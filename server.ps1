@@ -1,12 +1,24 @@
 Add-Type -AssemblyName System.Web
 
-$YtDlp = Join-Path $PSScriptRoot "tools\yt-dlp.exe"
+$configPath = Join-Path $PSScriptRoot "config.json"
+if (-not (Test-Path $configPath)) {
+    Write-Host "ERROR: config.json not found at $configPath"
+    exit 1
+}
+$cfg = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
+
+$port       = if ($cfg.server.port)       { $cfg.server.port }       else { 8080 }
+$bindHost   = if ($cfg.server.host)       { $cfg.server.host }       else { "localhost" }
+$ytdlpPath  = if ($cfg.ytdlp.path)        { $cfg.ytdlp.path }        else { "tools/yt-dlp.exe" }
+$YtDlp      = Join-Path $PSScriptRoot $ytdlpPath
+
 $listener = [System.Net.HttpListener]::new()
-$listener.Prefixes.Add("http://localhost:8080/")
+$listener.Prefixes.Add("http://${bindHost}:${port}/")
 $listener.Start()
 
-Write-Host "Server running at http://localhost:8080/Main.html"
+Write-Host "Server running at http://${bindHost}:${port}/Main.html"
 Write-Host "yt-dlp: $YtDlp"
+Write-Host "Config: $configPath"
 Write-Host "Press Ctrl+C to stop"
 
 function Send-Json($context, $obj, $code = 200) {
@@ -101,11 +113,23 @@ while ($listener.IsListening) {
     $context = $listener.GetContext()
     $path = $context.Request.Url.LocalPath
 
+    if ($path -eq '/api/config') {
+        $clientConfig = @{
+            server   = $cfg.server
+            app      = $cfg.app
+            languages = $cfg.languages
+            apis     = $cfg.apis
+        }
+        Send-Json $context $clientConfig
+        continue
+    }
+
     if ($path -eq '/api/info') {
         $vid = Get-QueryParam $context 'v'
         if (-not $vid) { Send-Error $context 'Missing ?v= parameter' 400; continue }
         Write-Host "[info] Fetching title for: $vid"
-        $result = Run-YtDlp @("--skip-download","--print","title","--",$vid) 15
+        $timeout = if ($cfg.ytdlp.timeoutInfo) { $cfg.ytdlp.timeoutInfo } else { 15 }
+        $result = Run-YtDlp @("--skip-download","--print","title","--",$vid) $timeout
         if ($result.exitCode -eq 0 -and $result.stdout.Trim()) {
             $title = $result.stdout.Trim().Split("`n")[0].Trim()
             Send-Json $context @{title=$title; id=$vid}
@@ -119,7 +143,8 @@ while ($listener.IsListening) {
         $vid = Get-QueryParam $context 'v'
         if (-not $vid) { Send-Error $context 'Missing ?v= parameter' 400; continue }
         Write-Host "[captions] Fetching for: $vid"
-        $langResult = Run-YtDlp @("--skip-download","--print","language","--",$vid) 15
+        $timeoutInfo = if ($cfg.ytdlp.timeoutInfo) { $cfg.ytdlp.timeoutInfo } else { 15 }
+        $langResult = Run-YtDlp @("--skip-download","--print","language","--",$vid) $timeoutInfo
         $detectedLang = ''
         if ($langResult.exitCode -eq 0 -and $langResult.stdout.Trim()) {
             $raw = $langResult.stdout.Trim().Split("`n")[0].Trim()
@@ -127,7 +152,8 @@ while ($listener.IsListening) {
         }
         Write-Host "[captions] yt-dlp language: '$detectedLang'"
 
-        $result = Run-YtDlp @("--skip-download","--list-subs","--",$vid) 30
+        $timeoutCaptions = if ($cfg.ytdlp.timeoutCaptions) { $cfg.ytdlp.timeoutCaptions } else { 30 }
+        $result = Run-YtDlp @("--skip-download","--list-subs","--",$vid) $timeoutCaptions
         Write-Host "[captions] Exit: $($result.exitCode)"
         if ($result.exitCode -ne 0) {
             Send-Error $context "yt-dlp error: $($result.stderr)" 500
@@ -157,7 +183,8 @@ while ($listener.IsListening) {
         New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
         try {
             $outPath = Join-Path $tempDir "sub"
-            $result = Run-YtDlp @("--write-sub","--write-auto-sub","--sub-lang",$lang,"--sub-format","json3","--skip-download","-o",$outPath,"--",$vid) 60
+            $timeoutSubs = if ($cfg.ytdlp.timeoutSubtitles) { $cfg.ytdlp.timeoutSubtitles } else { 60 }
+            $result = Run-YtDlp @("--write-sub","--write-auto-sub","--sub-lang",$lang,"--sub-format","json3","--skip-download","-o",$outPath,"--",$vid) $timeoutSubs
             Write-Host "[subtitles] Exit: $($result.exitCode)"
             Write-Host "[subtitles] stderr: $($result.stderr.Substring(0, [Math]::Min(200, $result.stderr.Length)))"
             $jsonFiles = Get-ChildItem $tempDir -Filter "*.json3" -ErrorAction SilentlyContinue
@@ -194,8 +221,10 @@ while ($listener.IsListening) {
         if (-not $text) { Send-Error $context 'Missing ?text= parameter' 400; continue }
         if (-not $lang) { $lang = 'en' }
         try {
+            $ttsUrl = if ($cfg.apis.tts.url) { $cfg.apis.tts.url } else { "https://translate.google.com/translate_tts" }
+            $ttsClient = if ($cfg.apis.tts.client) { $cfg.apis.tts.client } else { "tw-ob" }
             $encoded = [System.Uri]::EscapeDataString($text)
-            $url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=$lang&client=tw-ob&q=$encoded"
+            $url = "${ttsUrl}?ie=UTF-8&tl=$lang&client=$ttsClient&q=$encoded"
             $headers = @{'User-Agent'='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
             $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10 -Headers $headers
             $bytes = $r.Content
@@ -217,9 +246,10 @@ while ($listener.IsListening) {
         if (-not $text) { Send-Error $context 'Missing ?text= parameter' 400; continue }
         if (-not $to) { $to = 'ru' }
         try {
+            $translateUrl = if ($cfg.apis.translate.url) { $cfg.apis.translate.url } else { "https://translate.googleapis.com/translate_a/single" }
+            $translateClient = if ($cfg.apis.translate.client) { $cfg.apis.translate.client } else { "gtx" }
             $encoded = [System.Uri]::EscapeDataString($text)
-            $url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=$from&tl=$to&dt=t&q=$encoded"
-            $headers = @{'User-Agent'='Mozilla/5.0'}
+            $url = "${translateUrl}?client=$translateClient&sl=$from&tl=$to&dt=t&q=$encoded"
             $webClient = New-Object System.Net.WebClient
             $webClient.Headers.Add('User-Agent', 'Mozilla/5.0')
             $bytes = $webClient.DownloadData($url)
@@ -236,8 +266,10 @@ while ($listener.IsListening) {
         if (-not $word) { Send-Error $context 'Missing ?word= parameter' 400; continue }
         Write-Host "[words] Fetching synonyms for: $word"
         try {
+            $synonymsUrl = if ($cfg.apis.synonyms.url) { $cfg.apis.synonyms.url } else { "https://api.datamuse.com/words" }
+            $synonymsMax = if ($cfg.apis.synonyms.maxResults) { $cfg.apis.synonyms.maxResults } else { 8 }
             $encoded = [System.Uri]::EscapeDataString($word)
-            $url = "https://api.datamuse.com/words?rel_syn=$encoded&max=8"
+            $url = "${synonymsUrl}?rel_syn=$encoded&max=$synonymsMax"
             $webClient = New-Object System.Net.WebClient
             $webClient.Headers.Add('User-Agent', 'Mozilla/5.0')
             $bytes = $webClient.DownloadData($url)
