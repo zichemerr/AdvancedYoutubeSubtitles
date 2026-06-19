@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>🌸 Jamila Smart Reader | Multi-Language Translator & PDF Reader 🐱</title>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #fff0f5;
+            font-family: 'Quicksand', 'Inter', -apple-system, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            color: #75556b;
+            position: relative;
+            transition: background 0.2s ease;
+        }
+
+        body::before {
+            content: "🌸🐾🌸🐱🌸🐾🌸";
+            position: fixed;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 24px;
+            opacity: 0.2;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 0;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            background: rgba(255, 245, 250, 0.7);
+            border-radius: 80px;
+            padding: 0.8rem 1rem;
+            backdrop-filter: blur(3px);
+            transition: all 0.2s;
+        }
+        .brand h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f07c9c, #e46b8f, #c95a7a);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand p {
+            font-size: 0.85rem;
+            color: #e38bab;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .toolbar {
+            background: #ffffffdd;
+            backdrop-filter: blur(8px);
+            border-radius: 48px;
+            padding: 0.8rem 1.8rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 8px 20px rgba(240, 100, 140, 0.12);
+            border: 1px solid #ffe2ef;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            transition: all 0.2s;
+        }
+        .menu-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn {
+            border: none;
+            background: #ffeef4;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #bd7e98;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Quicksand', sans-serif;
+        }
+        .btn-primary {
+            background: #f2a0bb;
+            color: white;
+            box-shadow: 0 2px 5px #f4bfd1;
+        }
+        .btn-primary:hover {
+            background: #e885a5;
+            transform: translateY(-2px);
+        }
+        .btn-outline {
+            background: #fff5f9;
+            border: 1px solid #ffcfdf;
+        }
+        .btn-outline:hover {
+            background: #ffe0ec;
+            transform: translateY(-2px);
+        }
+        .badge {
+            background: #ffeef4;
+            border-radius: 40px;
+            padding: 5px 18px;
+            font-size: 0.75rem;
+            color: #d47599;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #ffd9e7;
+        }
+        .status {
+            background: #ffecf2;
+            padding: 5px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #e27c9e;
+        }
+
+        .lang-selector {
+            background: #fff5f9;
+            border-radius: 40px;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #ffcfdf;
+            transition: all 0.2s ease;
+        }
+        .lang-selector label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #e27c9e;
+            transition: color 0.2s ease;
+        }
+        .lang-dropdown {
+            background: #fff5f9;
+            border: 1px solid #ffc7dd;
+            border-radius: 40px;
+            padding: 6px 12px;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: #bd7e98;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .lang-dropdown:hover {
+            background: #ffe0ec;
+            border-color: #f2a0bb;
+        }
+        .reader-card {
+            background: #ffffffea;
+            border-radius: 32px;
+            border: 1px solid #ffdbeb;
+            overflow: hidden;
+            box-shadow: 0 12px 28px rgba(233, 120, 158, 0.12);
+            transition: all 0.2s;
+        }
+        .reader-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.8rem;
+            background: #fff8fb;
+            border-bottom: 2px solid #ffdbea;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .reader-header h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #e283a6;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .reader-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .small-btn {
+            background: #ffecf2;
+            border: none;
+            padding: 5px 16px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #c26889;
+            transition: all 0.2s ease;
+        }
+        .small-btn:hover {
+            background: #ffe0ec;
+            transform: translateY(-1px);
+            color: #b15a7a;
+        }
+        .reader-content {
+            padding: 2rem 2rem;
+            max-height: 58vh;
+            overflow-y: auto;
+            font-family: 'Quicksand', 'Georgia', serif;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #fffcfd;
+        }
+        .placeholder {
+            color: #e0a6be;
+            text-align: center;
+            padding: 3rem 1rem;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        ::selection {
+            background: #ffc0d9;
+            color: #5e3a4a;
+        }
+        
+        .word {
+            display: inline-block;
+            cursor: pointer;
+            border-radius: 12px;
+            padding: 0 3px;
+            margin: 0 -1px;
+            transition: 0.08s linear;
+        }
+        .word:hover {
+            background-color: #ffe0f0;
+            outline: 1px solid #f7aac5;
+            transform: scale(1.02);
+        }
+
+        .paste-area-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #fff9fc;
+            padding: 8px 12px;
+            border-radius: 32px;
+            border: 1px solid #ffe2ef;
+        }
+        .big-textarea {
+            background: #fff7fa;
+            border-radius: 28px;
+            border: 1.5px solid #ffc7dd;
+            padding: 12px 18px;
+            font-family: 'Quicksand', monospace;
+            font-size: 0.85rem;
+            width: 280px;
+            resize: vertical;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #6a4e60;
+        }
+        .big-textarea:focus {
+            outline: none;
+            border-color: #f5a2bf;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(242,160,187,0.2);
+        }
+        .textarea-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        @media (max-width: 850px) {
+            .big-textarea { width: 220px; }
+        }
+        @media (max-width: 700px) {
+            .big-textarea { width: 100%; }
+            .paste-area-wrapper { width: 100%; }
+        }
+
+        .fs-reader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            flex-direction: column;
+            font-family: 'Quicksand', 'Georgia', serif;
+            background: #fff0f5;
+        }
+        .fs-reader.theme-light { background: #fff9fc; color: #6a4e60; }
+        .fs-reader.theme-light .fs-toolbar { background: rgba(255, 235, 245, 0.95); border-bottom: 2px solid #ffc0d6; }
+        .fs-reader.theme-light .fs-btn { background: #ffeef5; color: #c57392; border: 1px solid #ffd0e2; }
+        .fs-reader.theme-light .fs-btn:hover { background: #ffe0ec; transform: translateY(-2px); }
+        .fs-reader.theme-light .fs-pagination { background: #fff4f9; }
+        .fs-reader.theme-light .page-input { background: white; color: #75556b; border: 1px solid #ffc6dc; }
+        .fs-reader.theme-light .word:hover { background-color: #ffe0f0; outline: 1px solid #f7aac5; }
+        .fs-reader.theme-light .lang-selector { background: #fff5f9; border: 1px solid #ffcfdf; }
+        .fs-reader.theme-light .lang-selector label { color: #e27c9e; }
+        .fs-reader.theme-light .lang-dropdown { background: #fff5f9; border: 1px solid #ffc7dd; color: #bd7e98; }
+        
+        .fs-reader.theme-sepia { background: #fef2e0; color: #7a5b4b; }
+        .fs-reader.theme-sepia .fs-toolbar { background: rgba(250, 240, 220, 0.95); border-bottom: 2px solid #e2c7a8; }
+        .fs-reader.theme-sepia .fs-btn { background: #f7e8d4; color: #9b6e54; border: 1px solid #e2c7a8; }
+        .fs-reader.theme-sepia .fs-pagination { background: #faefdf; }
+        .fs-reader.theme-sepia .page-input { background: #fffaf0; color: #7a5b4b; border: 1px solid #e2c7a8; }
+        .fs-reader.theme-sepia .lang-selector { background: #fcf3e6; border: 1px solid #e2c7a8; }
+        
+        .fs-reader.theme-dark { background: #1a1a2e; color: #f0e6e9; }
+        .fs-reader.theme-dark .fs-toolbar { background: #23233f; border-bottom: 2px solid #4a3b4a; }
+        .fs-reader.theme-dark .fs-btn { background: #2d2d4a; color: #ffcce0; border: 1px solid #5e4b62; }
+        .fs-reader.theme-dark .fs-btn:hover { background: #40406b; color: #ffffff; }
+        .fs-reader.theme-dark .fs-pagination { background: #202034; }
+        .fs-reader.theme-dark .page-input { background: #2d2d44; color: #ffdee8; border: 1px solid #7b5e74; }
+        .fs-reader.theme-dark .word:hover { background-color: #4c3a55 !important; outline: 1px solid #ff9abf !important; }
+        .fs-reader.theme-dark .lang-selector { background: #2d2d44; border: 1px solid #7b5e74; }
+        .fs-reader.theme-dark .lang-dropdown { background: #2d2d4a; border: 1px solid #8f6b84; color: #ffd9e6; }
+        .fs-reader.theme-dark #closeFsBtn { background: #c25a7a !important; color: white !important; border: 1px solid #ffb0c5 !important; }
+        
+        .fs-toolbar {
+            padding: 0.7rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            backdrop-filter: blur(8px);
+        }
+        .fs-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .fs-btn {
+            border: none;
+            padding: 6px 18px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Quicksand', sans-serif;
+        }
+        .fs-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 16px;
+        }
+        .page-input {
+            width: 70px;
+            text-align: center;
+            padding: 6px;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        .fs-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem 2.5rem;
+            line-height: 1.7;
+        }
+        .fs-body.font-small { font-size: 0.85rem; }
+        .fs-body.font-medium { font-size: 1rem; }
+        .fs-body.font-large { font-size: 1.25rem; }
+        .fs-body.font-xlarge { font-size: 1.5rem; }
+
+        .translate-popup {
+            position: fixed;
+            z-index: 10001;
+            background: #fff7fb;
+            border-radius: 32px;
+            box-shadow: 0 12px 28px rgba(190, 80, 110, 0.35);
+            padding: 14px 22px;
+            min-width: 280px;
+            max-width: 400px;
+            font-family: 'Quicksand', sans-serif;
+            backdrop-filter: blur(12px);
+            border: 2px solid #ffbfd4;
+            cursor: default;
+        }
+        .translate-popup .popup-word {
+            font-weight: 800;
+            color: #e27294;
+            border-bottom: 1px solid #ffd9e8;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            padding-right: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .popup-word-text {
+            flex: 1;
+            word-break: break-word;
+        }
+        .popup-close {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: none;
+            border: none;
+            font-size: 1.7rem;
+            line-height: 1;
+            cursor: pointer;
+            color: #dd92ae;
+            transition: 0.1s;
+            font-weight: bold;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .popup-close:hover {
+            background-color: #ffe0ec;
+            color: #c2577c;
+            transform: scale(1.05);
+        }
+        .speaker-btn {
+            background: #ffeef4;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+            color: #d47599;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+        .speaker-btn:hover {
+            background: #f2a0bb;
+            color: white;
+            transform: scale(1.05);
+        }
+        .popup-translation {
+            font-size: 0.95rem;
+            word-break: break-word;
+        }
+        .popup-language-note {
+            font-size: 0.7rem;
+            color: #d98dab;
+            margin-top: 8px;
+            text-align: right;
+            border-top: 1px dashed #ffd9e8;
+            padding-top: 6px;
+        }
+        .toast-message {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d2d44;
+            color: #ffdee8;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 10002;
+            backdrop-filter: blur(10px);
+            font-family: 'Quicksand', sans-serif;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        @media (max-width: 700px) {
+            .app-container { padding: 1rem; }
+            .reader-content { padding: 1rem; }
+            .fs-body { padding: 1rem; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .menu-group { justify-content: center; }
+        }
+        footer {
+            text-align: center;
+            margin-top: 1.2rem;
+            font-size: 0.7rem;
+            color: #dd9bb3;
+            font-weight: 500;
+        }
+        .fs-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="brand">
+        <h1><span>🌸📖</span> Jamila Smart Reader <span>🐱🌸</span></h1>
+        <p>🐾 Click any word → translation + 🔊 pronunciation (original language!) | Select any phrase → instant translation | ✕ Close popup 🐾</p>
+    </div>
+
+    <div class="toolbar">
+        <div class="menu-group">
+            <button id="pdfSelectBtn" class="btn btn-outline">🌸 PDF</button>
+            <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;">
+            <button id="extractPdfBtn" class="btn btn-primary" disabled>🐱 Extract Text</button>
+            <div class="badge" id="pdfBadge" style="display: none;"></div>
+        </div>
+        <div class="menu-group">
+            <div class="paste-area-wrapper">
+                <textarea id="pasteTextArea" class="big-textarea" rows="3" placeholder="📝 Paste your text here... ✨ meow!"></textarea>
+                <div class="textarea-actions">
+                    <button id="loadTextBtn" class="btn btn-primary">🍬 Load Text</button>
+                </div>
+            </div>
+        </div>
+        <div class="menu-group">
+            <div class="lang-selector">
+                <label>🌐 Translate to:</label>
+                <select id="targetLangSelect" class="lang-dropdown">
+                    <option value="ru">🇷🇺 Russian</option>
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Spanish</option>
+                    <option value="fr">🇫🇷 French</option>
+                    <option value="de">🇩🇪 German</option>
+                    <option value="it">🇮🇹 Italian</option>
+                    <option value="pt">🇵🇹 Portuguese</option>
+                    <option value="zh">🇨🇳 Chinese</option>
+                    <option value="ja">🇯🇵 Japanese</option>
+                    <option value="ko">🇰🇷 Korean</option>
+                    <option value="ar">🇸🇦 Arabic</option>
+                    <option value="tr">🇹🇷 Turkish</option>
+                    <option value="pl">🇵🇱 Polish</option>
+                    <option value="uk">🇺🇦 Ukrainian</option>
+                    <option value="vi">🇻🇳 Vietnamese</option>
+                    <option value="id">🇮🇩 Indonesian</option>
+                </select>
+            </div>
+            <button id="fullscreenOpenBtn" class="btn btn-outline" disabled>📖 Fullscreen</button>
+            <button id="clearAllBtn" class="btn btn-outline">🧹 Clear</button>
+        </div>
+    </div>
+
+    <div class="reader-card">
+        <div class="reader-header">
+            <h3>📖 ✨ Jamila's Reading Garden ✨ 🐈</h3>
+            <div class="reader-actions">
+                <button id="copyTextBtn" class="small-btn" disabled>📋 Copy all</button>
+                <span id="docStatusBadge" class="status">🌸 No active text</span>
+            </div>
+        </div>
+        <div class="reader-content" id="mainReader">
+            <div class="placeholder">🐱🌸 Welcome to Jamila Smart Reader! <br>✨ Click a word → translation + pronunciation (original language!)<br>✨ Select any phrase → translation<br>📖 Upload PDF or paste text above.<br>🌐 Choose target language for translation — pronunciation always in original language!</div>
+        </div>
+    </div>
+    <footer>💖 Fullscreen mode, PDF page flip, font size & themes. Pronunciation uses Google TTS (HTTPS required). If TTS fails, fallback to system voice. 🐾🌸</footer>
+</div>
+
+<div id="fullscreenReader" class="fs-reader theme-light">
+    <div class="fs-toolbar">
+        <h3 style="font-size:1rem; font-weight:700;">🌸 Jamila Smart Reader 🐱</h3>
+        <div class="fs-controls">
+            <button class="fs-btn theme-btn" data-theme="light">☀️ Light</button>
+            <button class="fs-btn theme-btn" data-theme="sepia">📜 Sepia</button>
+            <button class="fs-btn theme-btn" data-theme="dark">🌙 Dark</button>
+            <div class="lang-selector" style="margin-left: 8px;">
+                <label>🌐</label>
+                <select id="fsTargetLangSelect" class="lang-dropdown">
+                    <option value="ru">🇷🇺 Russian</option>
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Spanish</option>
+                    <option value="fr">🇫🇷 French</option>
+                    <option value="de">🇩🇪 German</option>
+                    <option value="it">🇮🇹 Italian</option>
+                    <option value="pt">🇵🇹 Portuguese</option>
+                    <option value="zh">🇨🇳 Chinese</option>
+                    <option value="ja">🇯🇵 Japanese</option>
+                    <option value="ko">🇰🇷 Korean</option>
+                    <option value="ar">🇸🇦 Arabic</option>
+                    <option value="tr">🇹🇷 Turkish</option>
+                    <option value="pl">🇵🇱 Polish</option>
+                    <option value="uk">🇺🇦 Ukrainian</option>
+                    <option value="vi">🇻🇳 Vietnamese</option>
+                    <option value="id">🇮🇩 Indonesian</option>
+                </select>
+            </div>
+            <button id="fsFontMinus" class="fs-btn">A-</button>
+            <button id="fsFontReset" class="fs-btn">A·M</button>
+            <button id="fsFontPlus" class="fs-btn">A+</button>
+            <button id="closeFsBtn" class="fs-btn">✕ Close</button>
+        </div>
+    </div>
+    <div id="fsPaginationBar" class="fs-pagination">
+        <button id="prevPageBtn" class="fs-btn" disabled>◀ Prev</button>
+        <span>🐾 Page <input type="number" id="pageNumberInput" class="page-input" value="1" min="1"> of <span id="totalPagesSpan">0</span> 🐾</span>
+        <button id="nextPageBtn" class="fs-btn">Next ▶</button>
+    </div>
+    <div class="fs-body font-medium" id="fsBody">
+        <div style="text-align:center; padding:2rem;">🌸🐱 No content loaded yet 🐱🌸</div>
+    </div>
+</div>
+
+<div id="translatePopup" class="translate-popup" style="display: none;">
+    <button class="popup-close" id="closePopupBtn">✕</button>
+    <div class="popup-word">
+        <span class="popup-word-text" id="popupWord"></span>
+        <button id="speakWordBtn" class="speaker-btn" title="🔊 Listen in original language">🔊</button>
+    </div>
+    <div class="popup-translation" id="popupTranslation">🐱 Loading translation...</div>
+    <div class="popup-language-note" id="popupLangNote"></div>
+</div>
+<div id="toastMsg" class="toast-message"></div>
+
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    const pdfSelectBtn = document.getElementById('pdfSelectBtn');
+    const pdfFileInput = document.getElementById('pdfFileInput');
+    const extractPdfBtn = document.getElementById('extractPdfBtn');
+    const pdfBadge = document.getElementById('pdfBadge');
+    const pasteTextArea = document.getElementById('pasteTextArea');
+    const loadTextBtn = document.getElementById('loadTextBtn');
+    const fullscreenOpenBtn = document.getElementById('fullscreenOpenBtn');
+    const copyTextBtn = document.getElementById('copyTextBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const mainReaderDiv = document.getElementById('mainReader');
+    const docStatusBadge = document.getElementById('docStatusBadge');
+    const targetLangSelect = document.getElementById('targetLangSelect');
+    const fsTargetLangSelect = document.getElementById('fsTargetLangSelect');
+    const fsReader = document.getElementById('fullscreenReader');
+    const fsBody = document.getElementById('fsBody');
+    const fsFontMinus = document.getElementById('fsFontMinus');
+    const fsFontPlus = document.getElementById('fsFontPlus');
+    const fsFontReset = document.getElementById('fsFontReset');
+    const closeFsBtn = document.getElementById('closeFsBtn');
+    const themeBtns = document.querySelectorAll('.theme-btn');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const pageNumberInput = document.getElementById('pageNumberInput');
+    const totalPagesSpan = document.getElementById('totalPagesSpan');
+    const translatePopup = document.getElementById('translatePopup');
+    const popupWordSpan = document.getElementById('popupWord');
+    const popupTranslationDiv = document.getElementById('popupTranslation');
+    const popupLangNote = document.getElementById('popupLangNote');
+    const closePopupBtn = document.getElementById('closePopupBtn');
+    const speakWordBtn = document.getElementById('speakWordBtn');
+    const toastMsg = document.getElementById('toastMsg');
+
+    let fullRawText = '', pagesArray = [], totalPages = 0, currentPageIdx = 0, isPdfMode = false;
+    let currentFontClass = 'font-medium', currentTheme = 'light', suppressPopupUntilNextSelection = false;
+    let currentOriginalWord = '', currentOriginalLang = 'en';
+
+    function showToast(text, duration = 2000) {
+        toastMsg.textContent = text;
+        toastMsg.style.opacity = '1';
+        setTimeout(() => { toastMsg.style.opacity = '0'; }, duration);
+    }
+
+    function speakWithFallback(word, langCode) {
+        if (!word || word.trim() === '') return;
+        // Try Google TTS (requires HTTPS or online environment)
+        const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(word)}&tl=${langCode}&client=tw-ob`;
+        const audio = new Audio(audioUrl);
+        audio.onerror = () => {
+            console.warn("Google TTS failed, using Web Speech API fallback");
+            // Fallback to Web Speech API (works locally but limited language support)
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(word);
+                // Map common language codes to BCP47
+                const langMap = { 'en': 'en-US', 'ru': 'ru-RU', 'es': 'es-ES', 'fr': 'fr-FR', 'de': 'de-DE', 'it': 'it-IT', 'pt': 'pt-PT', 'zh': 'zh-CN', 'ja': 'ja-JP', 'ko': 'ko-KR', 'ar': 'ar-SA', 'tr': 'tr-TR', 'pl': 'pl-PL', 'uk': 'uk-UA', 'vi': 'vi-VN', 'id': 'id-ID' };
+                utterance.lang = langMap[langCode] || 'en-US';
+                utterance.rate = 0.9;
+                speechSynthesis.cancel();
+                speechSynthesis.speak(utterance);
+                showToast(`🔊 Speaking in ${getLanguageDisplayName(langCode)} (system voice)`, 1500);
+            } else {
+                showToast("⚠️ Pronunciation not available - no speech API", 1500);
+            }
+        };
+        audio.oncanplaythrough = () => { audio.play().catch(e => console.warn("play failed", e)); };
+        audio.load();
+        showToast(`🔊 Loading pronunciation (${getLanguageDisplayName(langCode)})...`, 1000);
+    }
+
+    function syncLanguageSelectors() { fsTargetLangSelect.value = targetLangSelect.value; }
+    targetLangSelect.addEventListener('change', () => { fsTargetLangSelect.value = targetLangSelect.value; });
+    fsTargetLangSelect.addEventListener('change', () => { targetLangSelect.value = fsTargetLangSelect.value; });
+    function getCurrentTargetLang() { return targetLangSelect.value; }
+    function getLanguageDisplayName(langCode) {
+        const names = { 'ru':'Russian', 'en':'English', 'es':'Spanish', 'fr':'French', 'de':'German', 'it':'Italian', 'pt':'Portuguese', 'zh':'Chinese', 'ja':'Japanese', 'ko':'Korean', 'ar':'Arabic', 'tr':'Turkish', 'pl':'Polish', 'uk':'Ukrainian', 'vi':'Vietnamese', 'id':'Indonesian' };
+        return names[langCode] || langCode;
+    }
+    function updateDocStatus(msg, isErr = false) { docStatusBadge.innerHTML = msg; docStatusBadge.style.background = isErr ? "#ffe0db" : "#ffecf2"; }
+    function wrapWordsInContainer(container) { /* unchanged from original working version */ 
+        if (!container) return;
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, { acceptNode: (node) => { if (node.parentElement?.classList?.contains('word')) return NodeFilter.FILTER_REJECT; if (!node.textContent?.trim()) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; } });
+        const textNodes = []; while(walker.nextNode()) textNodes.push(walker.currentNode);
+        for (const textNode of textNodes) {
+            const parent = textNode.parentElement; if (!parent) continue;
+            const text = textNode.textContent;
+            const wordRegex = /([\p{L}\p{N}'-]+)/gu;
+            let lastIdx = 0, fragment = document.createDocumentFragment(), match;
+            while ((match = wordRegex.exec(text)) !== null) {
+                if (match.index > lastIdx) fragment.appendChild(document.createTextNode(text.slice(lastIdx, match.index)));
+                const span = document.createElement('span'); span.className = 'word'; span.textContent = match[0]; fragment.appendChild(span);
+                lastIdx = match.index + match[0].length;
+            }
+            if (lastIdx < text.length) fragment.appendChild(document.createTextNode(text.slice(lastIdx)));
+            parent.replaceChild(fragment, textNode);
+        }
+    }
+    function renderMainReader(textToShow) {
+        if (!textToShow?.trim()) { mainReaderDiv.innerHTML = '<div class="placeholder">🐱🌸 No text yet...</div>'; fullscreenOpenBtn.disabled = copyTextBtn.disabled = true; return; }
+        const escaped = textToShow.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+        mainReaderDiv.innerHTML = `<div style="font-family: 'Quicksand', Georgia, serif; line-height: 1.7;">${escaped.replace(/\n/g, '<br>')}</div>`;
+        wrapWordsInContainer(mainReaderDiv);
+        fullscreenOpenBtn.disabled = copyTextBtn.disabled = false;
+    }
+    function setTextContent(fullText, pagesArr, isPdf) { fullRawText = fullText; pagesArray = pagesArr; isPdfMode = isPdf; totalPages = pagesArr.length; totalPagesSpan.textContent = totalPages; currentPageIdx = 0; if (totalPages===0) return; if (isPdfMode) renderMainReader(pagesArr[0]); else renderMainReader(fullText); updateMetaInfo(); if (totalPages>0) { pageNumberInput.max = totalPages; pageNumberInput.min = 1; pageNumberInput.value = 1; } if (fsReader.style.display === 'flex') renderCurrentPageInFS(); }
+    function renderCurrentPageInFS() { if (!pagesArray.length || currentPageIdx >= pagesArray.length) { fsBody.innerHTML = '<div style="text-align:center; padding:2rem;">🐱 No text here ~</div>'; return; } let pageText = pagesArray[currentPageIdx] || ''; const escaped = pageText.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); fsBody.innerHTML = `<div>${escaped.replace(/\n/g, '<br>')}</div>`; wrapWordsInContainer(fsBody); pageNumberInput.value = currentPageIdx+1; prevPageBtn.disabled = (currentPageIdx===0); nextPageBtn.disabled = (currentPageIdx===totalPages-1); }
+    function goPrevPage() { if (currentPageIdx > 0) { currentPageIdx--; renderCurrentPageInFS(); } }
+    function goNextPage() { if (currentPageIdx < totalPages-1) { currentPageIdx++; renderCurrentPageInFS(); } }
+    function goToPage(pageNum) { let idx = Math.min(Math.max(parseInt(pageNum)-1,0), totalPages-1); if(idx !== currentPageIdx) { currentPageIdx = idx; renderCurrentPageInFS(); } }
+    let selectedPdfFile = null;
+    async function extractTextFromPDF(file) { /* simplified but works */ if (!file) return false; updateDocStatus("Extracting PDF..."); extractPdfBtn.disabled = true; try { const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise; let pageTexts = [], fullRaw = ''; for(let i=1;i<=pdf.numPages;i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); let pageStr = content.items.map(item=>item.str).join(' ').trim()||'(empty)'; pageTexts.push(pageStr); fullRaw += pageStr+'\n\n'; } setTextContent(fullRaw, pageTexts, true); updateDocStatus(`✅ PDF ready! ${fullRaw.length} chars`); return true; } catch(e) { updateDocStatus('PDF error', true); return false; } finally { extractPdfBtn.disabled = false; } }
+    function loadPastedText() { let raw = pasteTextArea.value; if (!raw.trim()) { updateDocStatus("Please paste text", true); return; } setTextContent(raw, [raw], false); updateDocStatus("Text loaded! Click words for translation + pronunciation"); }
+    function copyAllText() { if (!fullRawText) return; navigator.clipboard.writeText(fullRawText).then(()=>updateDocStatus("Copied!")).catch(()=>updateDocStatus("Copy failed",true)); }
+    function clearEverything() { fullRawText=''; pagesArray=[]; totalPages=0; isPdfMode=false; currentPageIdx=0; renderMainReader(''); updateDocStatus("Cleared"); pasteTextArea.value=''; pdfBadge.style.display='none'; selectedPdfFile=null; extractPdfBtn.disabled=true; fullscreenOpenBtn.disabled=copyTextBtn.disabled=true; if(fsReader.style.display==='flex') closeFullscreen(); hidePopup(); }
+    async function detectLanguage(text) { try { const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`; const res = await fetch(url); const data = await res.json(); return data[2] || 'en'; } catch { return 'en'; } }
+    async function fetchTranslationToLang(text, targetLang) { try { const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`; const res = await fetch(url); const data = await res.json(); return data[0][0][0] || 'Translation error'; } catch { return 'Translation error'; } }
+    async function showTranslation(text, x, y) {
+        if (!text?.trim()) return;
+        const trimmed = text.trim().slice(0,280);
+        const targetLang = getCurrentTargetLang();
+        const originalLang = await detectLanguage(trimmed);
+        currentOriginalWord = trimmed;
+        currentOriginalLang = originalLang;
+        popupWordSpan.textContent = trimmed.length>90?trimmed.slice(0,90)+'…':trimmed;
+        popupTranslationDiv.textContent = 'Loading...';
+        popupLangNote.textContent = `🌐 Translating to ${getLanguageDisplayName(targetLang)} | 🔇 Original: ${getLanguageDisplayName(originalLang)}`;
+        translatePopup.style.display = 'block';
+        let left = x+12, top = y-20;
+        if(left+300>window.innerWidth) left = x-312;
+        if(top+150>window.innerHeight) top = y-160;
+        if(top<10) top=10; if(left<5) left=5;
+        translatePopup.style.left = `${left}px`;
+        translatePopup.style.top = `${top}px`;
+        const translation = await fetchTranslationToLang(trimmed, targetLang);
+        popupTranslationDiv.textContent = translation;
+        popupLangNote.textContent = `✨ Translated to ${getLanguageDisplayName(targetLang)} | 🔊 Speaking in ${getLanguageDisplayName(originalLang)} ✨`;
+    }
+    function hidePopup() { translatePopup.style.display = 'none'; }
+    function onWordClick(e) { const wordSpan = e.target.closest('.word'); if(wordSpan){ e.stopPropagation(); const word = wordSpan.textContent.trim(); if(word && !/^\d+$/.test(word)) showTranslation(word, e.clientX, e.clientY); else hidePopup(); } }
+    function onSelectionTranslate(e) { setTimeout(async()=>{ if(suppressPopupUntilNextSelection) return; const sel = window.getSelection(); if(!sel || sel.isCollapsed) return; const selected = sel.toString().trim(); if(!selected.length) return; const active = fsReader.style.display==='flex'?fsBody:mainReaderDiv; let node=sel.anchorNode, inside=false; while(node){ if(node===active || node.parentElement===active){ inside=true; break; } node=node.parentElement; } if(inside) await showTranslation(selected, e.clientX, e.clientY); },30); }
+    function handleClosePopup(e) { e.stopPropagation(); hidePopup(); suppressPopupUntilNextSelection=true; window.getSelection()?.removeAllRanges(); setTimeout(()=>{ suppressPopupUntilNextSelection=false; },200); }
+    function handleSpeak() { if(currentOriginalWord) speakWithFallback(currentOriginalWord, currentOriginalLang); }
+    function openFullscreen() { if(!pagesArray.length) { updateDocStatus("No content", true); return; } currentPageIdx=0; if(isPdfMode && pagesArray.length) totalPages = pagesArray.length; else totalPages=1; totalPagesSpan.textContent=totalPages; pageNumberInput.max=totalPages; renderCurrentPageInFS(); fsReader.style.display='flex'; document.body.style.overflow='hidden'; hidePopup(); }
+    function closeFullscreen() { fsReader.style.display='none'; document.body.style.overflow=''; hidePopup(); }
+    function setFontSize(sz) { currentFontClass=sz; fsBody.classList.remove('font-small','font-medium','font-large','font-xlarge'); fsBody.classList.add(currentFontClass); }
+    function setTheme(theme) { currentTheme=theme; fsReader.classList.remove('theme-light','theme-sepia','theme-dark'); fsReader.classList.add(`theme-${theme}`); }
+    pdfSelectBtn.addEventListener('click',()=>pdfFileInput.click());
+    pdfFileInput.addEventListener('change',(e)=>{ if(e.target.files[0] && e.target.files[0].type==='application/pdf'){ selectedPdfFile=e.target.files[0]; pdfBadge.style.display='inline-flex'; pdfBadge.innerHTML=`🌸 ${selectedPdfFile.name} 🐱`; extractPdfBtn.disabled=false; updateDocStatus(`PDF selected: ${selectedPdfFile.name}`); } else { selectedPdfFile=null; pdfBadge.style.display='none'; extractPdfBtn.disabled=true; } });
+    extractPdfBtn.addEventListener('click',()=>{ if(selectedPdfFile) extractTextFromPDF(selectedPdfFile); else updateDocStatus("Choose PDF first",true); });
+    loadTextBtn.addEventListener('click',loadPastedText);
+    fullscreenOpenBtn.addEventListener('click',openFullscreen);
+    copyTextBtn.addEventListener('click',copyAllText);
+    clearAllBtn.addEventListener('click',clearEverything);
+    closeFsBtn.addEventListener('click',closeFullscreen);
+    prevPageBtn.addEventListener('click',goPrevPage);
+    nextPageBtn.addEventListener('click',goNextPage);
+    pageNumberInput.addEventListener('change',()=>goToPage(pageNumberInput.value));
+    fsFontPlus.addEventListener('click',()=>{ if(currentFontClass==='font-small') setFontSize('font-medium'); else if(currentFontClass==='font-medium') setFontSize('font-large'); else if(currentFontClass==='font-large') setFontSize('font-xlarge'); else setFontSize('font-xlarge'); });
+    fsFontMinus.addEventListener('click',()=>{ if(currentFontClass==='font-xlarge') setFontSize('font-large'); else if(currentFontClass==='font-large') setFontSize('font-medium'); else if(currentFontClass==='font-medium') setFontSize('font-small'); else setFontSize('font-small'); });
+    fsFontReset.addEventListener('click',()=>setFontSize('font-medium'));
+    themeBtns.forEach(btn=>btn.addEventListener('click',()=>setTheme(btn.dataset.theme)));
+    closePopupBtn.addEventListener('click',handleClosePopup);
+    speakWordBtn.addEventListener('click',handleSpeak);
+    document.addEventListener('click',(e)=>{ if(translatePopup.style.display==='block' && !translatePopup.contains(e.target) && e.target!==closePopupBtn && e.target!==speakWordBtn) hidePopup(); });
+    mainReaderDiv.addEventListener('click',onWordClick);
+    fsBody.addEventListener('click',onWordClick);
+    document.addEventListener('mouseup',onSelectionTranslate);
+    setTheme('light'); setFontSize('font-medium'); syncLanguageSelectors(); clearEverything();
+    function updateMetaInfo() { if (!fullRawText) { docStatusBadge.innerHTML = "🌸 No active text"; return; } const len = fullRawText.length; if (isPdfMode) { docStatusBadge.innerHTML = `🐱 PDF | ${totalPages} pg | ${len.toLocaleString()} chars 🍥`; } else { const wordCount = fullRawText.split(/\s+/).filter(w=>w.length).length; docStatusBadge.innerHTML = `📄 Text | ${len.toLocaleString()} chars | ~${wordCount} words 🌸`; } }
+</script>
+</body>
+</html>
