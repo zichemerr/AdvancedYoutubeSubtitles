@@ -17,17 +17,10 @@
         .back-btn:hover { background: rgba(217, 70, 168, 0.1); border-color: #D946A8; color: #D946A8; }
         .lang-info { font-size: 0.75rem; color: #aaa; background: #222; padding: 4px 12px; border-radius: 20px; border: 1px solid #333; font-weight: 600; }
 
-        .player-area { width: 100%; max-width: 1600px; margin: 0 auto; padding: 6px 20px 0; }
+        .player-area { width: 100%; max-width: 1600px; margin: 0 auto; padding-top: 4px; padding-left: 20px; padding-right: 20px; }
         .player-wrapper { width: 100%; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
         .player-wrapper iframe { width: 100% !important; height: 100% !important; border: none; }
-        .player-time { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 0; font-size: 0.8rem; font-weight: 600; color: #888; font-family: 'Quicksand', monospace; }
-        .player-time .time-current { color: #D946A8; }
-        .player-time .time-sep { color: #555; }
-        .player-time .time-total { color: #666; }
-        body.light-theme .player-time .time-current { color: #e27c9e; }
-        body.light-theme .player-time .time-total { color: #dd9bb3; }
-
-        .subs-area { flex: 0 0 auto; width: 100%; max-width: 1600px; margin: 0 auto; padding: 6px 20px 20px; display: flex; flex-direction: column; }
+        .subs-area { flex: 0 0 auto; width: 100%; max-width: 1600px; margin: 0 auto; padding: 12px 20px 4px; display: flex; flex-direction: column; }
         .subs-box { flex: 0 0 auto; max-height: 220px; min-height: 80px; display: flex; flex-direction: column; background: #1a1a1a; border: 1px solid #282828; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
         .subs-scroll { flex: 1; overflow-y: auto; padding: 10px 28px; scroll-behavior: smooth; }
         .subs-scroll::-webkit-scrollbar { width: 5px; }
@@ -170,8 +163,8 @@
         body.light-theme .finish-btn:hover { background: rgba(123, 201, 111, 0.15); }
         body.light-theme .finish-btn[style*="display: block"] { animation: fadeIn 0.4s ease; }
 
-        .topbar { transition: transform 0.3s ease, opacity 0.3s ease; }
-        .topbar.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+        .topbar { transition: transform 0.3s ease, opacity 0.3s ease, max-height 0.3s ease, padding 0.3s ease; overflow: hidden; }
+        .topbar.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; max-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; border: none !important; }
 
         @media (max-width: 700px) {
             .topbar { padding: 6px 12px; }
@@ -195,11 +188,6 @@
     </div>
     <div class="player-area">
         <div class="player-wrapper" id="player"></div>
-        <div class="player-time" id="playerTime" style="display:none;">
-            <span class="time-current" id="timeCurrent">00:00</span>
-            <span class="time-sep">/</span>
-            <span class="time-total" id="timeTotal">00:00</span>
-        </div>
     </div>
     <div class="subs-area" id="subsContainer" style="display:none;">
         <div class="subs-box">
@@ -245,15 +233,6 @@
             applyTheme(next);
         });
 
-        (function(){
-            const tb=document.querySelector('.topbar');
-            let timer;
-            function showTopbar(){tb.classList.remove('hidden');clearTimeout(timer);timer=setTimeout(()=>{if(player&&player.getPlayerState&&player.getPlayerState()===1)tb.classList.add('hidden');},3000);}
-            document.addEventListener('mousemove',e=>{if(e.clientY<60)showTopbar();});
-            tb.addEventListener('mouseenter',showTopbar);
-            showTopbar();
-        })();
-
         let player=null,subLines=[],videoId=null,lastIdx=-1,sourceLang='en';
         let APP_CONFIG=null;
         const targetLangKey='yt_player_target_lang';
@@ -264,6 +243,15 @@
         let seenWords = JSON.parse(localStorage.getItem(`yt_seen_${learnLang}`) || '[]');
         let learnedWords = JSON.parse(localStorage.getItem(`yt_learned_${learnLang}`) || '[]');
         let currentWord='';
+
+        (function(){
+            const tb=document.querySelector('.topbar');
+            let timer;
+            function showTopbar(){tb.classList.remove('hidden');resizePlayer();clearTimeout(timer);timer=setTimeout(()=>{if(player&&player.getPlayerState&&player.getPlayerState()===1){tb.classList.add('hidden');resizePlayer();}},3000);}
+            document.addEventListener('mousemove',e=>{if(e.clientY<60)showTopbar();});
+            tb.addEventListener('mouseenter',showTopbar);
+            showTopbar();
+        })();
 
         async function loadConfig() {
             try {
@@ -452,24 +440,16 @@
         function updateHighlight(t){if(!subLines.length)return;const i=findLineIndex(t);if(i===lastIdx)return;lastIdx=i;document.querySelectorAll('.sub-line').forEach((el,j)=>{el.classList.remove('past','active');if(j<i)el.classList.add('past');else if(j===i)el.classList.add('active');});if(i>=0)document.querySelectorAll('.sub-line')[i]?.scrollIntoView({behavior:'smooth',block:'center'});}
         function startTracking(){
             const finishBtn=document.getElementById('finishBtn');
-            const timeDisplay=document.getElementById('playerTime');
-            const timeCurrent=document.getElementById('timeCurrent');
-            const timeTotal=document.getElementById('timeTotal');
             let finishShown=false;
             let saveCounter=0;
-            timeDisplay.style.display='flex';
             setInterval(()=>{
                 if(player&&player.getCurrentTime){
                     const cur=player.getCurrentTime();
                     const dur=player.getDuration();
                     updateHighlight(cur*1000);
-                    if(dur>0){
-                        timeCurrent.textContent=formatTime(cur*1000);
-                        timeTotal.textContent=formatTime(dur*1000);
-                        if(!finishShown&&cur>=dur-5){
-                            finishBtn.style.display='block';
-                            finishShown=true;
-                        }
+                    if(dur>0&&!finishShown&&cur>=dur-5){
+                        finishBtn.style.display='block';
+                        finishShown=true;
                     }
                     saveCounter++;
                     if(saveCounter%25===0){
@@ -513,6 +493,7 @@
             videoId=getVideoId();if(!videoId)return;
             document.getElementById('placeholder').style.display='none';
             document.getElementById('subsContainer').style.display='flex';
+            resizePlayer();
             const tag=document.createElement('script');tag.src='https://www.youtube.com/iframe_api';document.head.appendChild(tag);
             let savedLines=null;
             try{const saved=JSON.parse(localStorage.getItem(`yt_player_videos_${learnLang}`))||[];const found=saved.find(v=>v.id===videoId);
@@ -535,12 +516,17 @@
         function resizePlayer(){
             var area=document.querySelector('.player-area');
             var tb=document.querySelector('.topbar');
-            var tbH=tb.classList.contains('hidden')?0:tb.offsetHeight;
-            var h = window.innerHeight - tbH - 240;
-            area.style.height = Math.max(100, h) + 'px';
-            if(player && player.setSize){
-                var w = area.offsetWidth;
-                player.setSize(w, Math.max(100, h));
+            if(!area)return;
+            var isHidden=tb.classList.contains('hidden');
+            var tbH=isHidden?0:tb.offsetHeight;
+            area.style.paddingTop='4px';
+            var subs=document.getElementById('subsContainer');
+            var subsH=subs&&subs.style.display!=='none'?subs.offsetHeight:0;
+            var h=window.innerHeight-tbH-subsH;
+            h=Math.max(200,h);
+            area.style.height=h+'px';
+            if(player&&player.setSize){
+                player.setSize(area.offsetWidth,h);
             }
         }
         resizePlayer(); window.addEventListener('resize', resizePlayer);
