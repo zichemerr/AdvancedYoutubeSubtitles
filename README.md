@@ -15,3 +15,10 @@ Click on the right mouse button right here.
 Click run it as admin
 --------------------------------------------------------------------------------------
 <img width="1143" height="839" alt="image" src="https://github.com/user-attachments/assets/a3f846ca-a4a0-4565-bd2b-337cfd40d243" />
+
+--------------------------------------------------------------------------------------
+Congrats it actually works!!! And as you can see the terminal window opend 
+and there are linkss so basically you can connect to them by another device,
+but if you close the terminal on your main pc Astaghfirullah it'll stop working anywhere else
+--------------------------------------------------------------------------------------
+<img width="1920" height="1035" alt="image" src="https://github.com/user-attachments/assets/7e39230a-47b0-43e3-b872-66e03df816e1" />
