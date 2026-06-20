@@ -335,6 +335,7 @@
             </div>
         </div>
     </div>
+    <script src="sync.js"></script>
     <script>
         const THEME_KEY='yt_theme';
         function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
@@ -596,7 +597,7 @@
             }).join('');
         }
         document.getElementById('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') loadVideo(); });
-        loadConfig();
+        AppSync.ready.then(()=>loadConfig());
         async function updateOldTitles(){
             if (!APP_CONFIG) return;
             const videos=getSavedVideos();let changed=false;

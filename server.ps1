@@ -11,6 +11,9 @@ $port       = if ($cfg.server.port)       { $cfg.server.port }       else { 8080
 $bindHost   = if ($cfg.server.host)       { $cfg.server.host }       else { "localhost" }
 $ytdlpPath  = if ($cfg.ytdlp.path)        { $cfg.ytdlp.path }        else { "tools/yt-dlp.exe" }
 $YtDlp      = Join-Path $PSScriptRoot $ytdlpPath
+$syncPath   = Join-Path $PSScriptRoot "data\sync.json"
+$dataDir    = Split-Path $syncPath -Parent
+if (-not (Test-Path $dataDir)) { New-Item -ItemType Directory -Force -Path $dataDir | Out-Null }
 
 $listener = [System.Net.HttpListener]::new()
 $listener.Prefixes.Add("http://${bindHost}:${port}/")
@@ -314,6 +317,110 @@ while ($listener.IsListening) {
             Send-Json $context @{word=$word; synonyms=@()}
         }
         continue
+    }
+    elseif ($path -eq '/api/sync') {
+        $method = $context.Request.HttpMethod
+        if ($method -eq 'GET') {
+            try {
+                if (Test-Path $syncPath) {
+                    $data = [System.IO.File]::ReadAllText($syncPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+                    Send-Json $context $data
+                } else {
+                    Send-Json $context @{seen=@{}; learned=@{}; videos=@{}; texts=@{}; positions=@{}; settings=@{}; timestamp=0}
+                }
+            } catch {
+                Send-Json $context @{seen=@{}; learned=@{}; videos=@{}; texts=@{}; positions=@{}; settings=@{}; timestamp=0}
+            }
+        }
+        elseif ($method -eq 'POST') {
+            try {
+                $reader = New-Object System.IO.StreamReader($context.Request.InputStream, [System.Text.Encoding]::UTF8)
+                $body = $reader.ReadToEnd()
+                $incoming = $body | ConvertFrom-Json
+
+                $existing = @{seen=@{}; learned=@{}; videos=@{}; texts=@{}; positions=@{}; settings=@{}; timestamp=0}
+                if (Test-Path $syncPath) {
+                    try {
+                        $raw = [System.IO.File]::ReadAllText($syncPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+                        if ($raw.seen)       { foreach ($p in $raw.seen.PSObject.Properties)       { $existing.seen[$p.Name] = @($p.Value) } }
+                        if ($raw.learned)    { foreach ($p in $raw.learned.PSObject.Properties)    { $existing.learned[$p.Name] = @($p.Value) } }
+                        if ($raw.videos)     { foreach ($p in $raw.videos.PSObject.Properties)     { $existing.videos[$p.Name] = @($p.Value) } }
+                        if ($raw.texts)      { foreach ($p in $raw.texts.PSObject.Properties)      { $existing.texts[$p.Name] = @($p.Value) } }
+                        if ($raw.positions)  { foreach ($p in $raw.positions.PSObject.Properties)  { $existing.positions[$p.Name] = [int]$p.Value } }
+                        if ($raw.settings)   { foreach ($p in $raw.settings.PSObject.Properties)   { $existing.settings[$p.Name] = $p.Value } }
+                    } catch {}
+                }
+
+                if ($incoming.seen -and ($incoming.seen -is [PSCustomObject])) {
+                    foreach ($p in $incoming.seen.PSObject.Properties) {
+                        $lang = $p.Name; $arr = @($p.Value)
+                        if (-not $existing.seen.ContainsKey($lang)) { $existing.seen[$lang] = @() }
+                        $existing.seen[$lang] = @($existing.seen[$lang] + $arr | Select-Object -Unique)
+                    }
+                }
+                if ($incoming.learned -and ($incoming.learned -is [PSCustomObject])) {
+                    foreach ($p in $incoming.learned.PSObject.Properties) {
+                        $lang = $p.Name; $arr = @($p.Value)
+                        if (-not $existing.learned.ContainsKey($lang)) { $existing.learned[$lang] = @() }
+                        $existing.learned[$lang] = @($existing.learned[$lang] + $arr | Select-Object -Unique)
+                    }
+                }
+                if ($incoming.videos -and ($incoming.videos -is [PSCustomObject])) {
+                    foreach ($p in $incoming.videos.PSObject.Properties) {
+                        $lang = $p.Name; $newArr = @($p.Value)
+                        if (-not $existing.videos.ContainsKey($lang)) { $existing.videos[$lang] = @() }
+                        $byId = @{}
+                        foreach ($item in $existing.videos[$lang]) { if ($item.id) { $byId[$item.id] = $item } }
+                        foreach ($item in $newArr) { if ($item.id) { $byId[$item.id] = $item } }
+                        $existing.videos[$lang] = @($byId.Values)
+                    }
+                }
+                if ($incoming.texts -and ($incoming.texts -is [PSCustomObject])) {
+                    foreach ($p in $incoming.texts.PSObject.Properties) {
+                        $lang = $p.Name; $newArr = @($p.Value)
+                        if (-not $existing.texts.ContainsKey($lang)) { $existing.texts[$lang] = @() }
+                        $byId = @{}
+                        foreach ($item in $existing.texts[$lang]) { if ($item.id) { $byId[$item.id] = $item } }
+                        foreach ($item in $newArr) { if ($item.id) { $byId[$item.id] = $item } }
+                        $existing.texts[$lang] = @($byId.Values)
+                    }
+                }
+                if ($incoming.positions -and ($incoming.positions -is [PSCustomObject])) {
+                    foreach ($p in $incoming.positions.PSObject.Properties) {
+                        $newPos = [int]$p.Value
+                        $oldPos = 0
+                        if ($existing.positions.ContainsKey($p.Name)) { $oldPos = [int]$existing.positions[$p.Name] }
+                        if ($newPos -gt $oldPos) { $existing.positions[$p.Name] = $newPos }
+                    }
+                }
+                if ($incoming.settings -and ($incoming.settings -is [PSCustomObject])) {
+                    foreach ($p in $incoming.settings.PSObject.Properties) {
+                        $existing.settings[$p.Name] = $p.Value
+                    }
+                }
+
+                $existing.timestamp = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+                $dir = Split-Path $syncPath -Parent
+                if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+                $json = $existing | ConvertTo-Json -Depth 10 -Compress
+                [System.IO.File]::WriteAllText($syncPath, $json, [System.Text.Encoding]::UTF8)
+                Send-Json $context @{ok=$true; timestamp=$existing.timestamp; merged=$existing}
+            } catch {
+                Write-Host "[sync] Error: $_"
+                Send-Error $context "Sync failed: $($_.Exception.Message)"
+            }
+        }
+        elseif ($method -eq 'DELETE') {
+            try {
+                if (Test-Path $syncPath) { Remove-Item $syncPath -Force }
+                Send-Json $context @{ok=$true; timestamp=0}
+            } catch {
+                Send-Error $context "Delete failed: $($_.Exception.Message)"
+            }
+        }
+        else {
+            Send-Error $context "Method not allowed" 405
+        }
     }
     else {
         $file = Join-Path $PSScriptRoot $path.TrimStart('/')

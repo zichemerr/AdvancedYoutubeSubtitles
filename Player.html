@@ -21,7 +21,7 @@
         .lang-info { font-size: 0.75rem; color: #aaa; background: #222; padding: 4px 12px; border-radius: 20px; border: 1px solid #333; font-weight: 600; }
 
         .player-area { width: 100%; max-width: 1600px; margin: 0 auto; padding-top: 4px; padding-left: 20px; padding-right: 20px; }
-        .player-wrapper { width: 100%; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+        .player-wrapper { width: 100%; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); position: relative; }
         .player-wrapper iframe { width: 100% !important; height: 100% !important; border: none; }
         .subs-area { flex: 0 0 auto; width: 100%; max-width: 1600px; margin: 0 auto; padding: 12px 20px 4px; display: flex; flex-direction: column; }
         .subs-box { flex: 0 0 auto; max-height: 120px; min-height: 50px; display: flex; flex-direction: column; background: #1a1a1a; border: 1px solid #282828; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
@@ -176,7 +176,7 @@
             .topbar-brand { font-size: 0.9rem; }
             .back-btn { padding: 5px 12px; font-size: 0.75rem; }
             .player-area { padding-left: 0; padding-right: 0; border-radius: 0; flex-shrink: 0; }
-            .player-wrapper { border-radius: 0; }
+            .player-wrapper { border-radius: 0; height: 56.25vw; }
             .subs-area { padding: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
             .subs-box { max-height: none; border-radius: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
             .subs-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 14px; }
@@ -237,6 +237,7 @@
             </div>
         </div>
     </div>
+    <script src="sync.js"></script>
     <script>
         const THEME_KEY='yt_theme';
         function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
@@ -495,11 +496,18 @@
             },80);
         }
         function onYouTubeIframeAPIReady(){
-            player=new YT.Player('player',{width:'100%',height:'100%',videoId,playerVars:{autoplay:1},events:{
+            var isMobile=window.innerWidth<=700;
+            player=new YT.Player('player',{width:'100%',height:'100%',videoId,playerVars:{autoplay:isMobile?0:1,playsinline:1,rel:0},events:{
                 onReady:function(){
                     const savedPos=parseInt(localStorage.getItem(`yt_pos_${videoId}`)||'0',10);
                     if(savedPos>5){player.seekTo(savedPos,true);}
                     resizePlayer();startTracking();
+                    if(window.innerWidth<=700&&player.getPlayerState&&player.getPlayerState()!==1){
+                        document.getElementById('player').addEventListener('click',function playOnce(){
+                            player.playVideo();
+                            document.getElementById('player').removeEventListener('click',playOnce);
+                        });
+                    }
                 },
                 onStateChange:function(e){
                     if(e.data===0){
@@ -542,8 +550,13 @@
             try{const info=await apiFetch(`/api/info?v=${videoId}`);if(info.title)document.title=info.title;}catch{}}
             catch(e){document.getElementById('noSubs').textContent=e.message;}
         }
-        loadConfig();
-        init();
+        AppSync.ready.then(()=>{
+            learnLang = new URLSearchParams(window.location.search).get('lang') || localStorage.getItem(LEARN_LANG_KEY) || 'en';
+            localStorage.setItem(LEARN_LANG_KEY, learnLang);
+            seenWords = JSON.parse(localStorage.getItem(`yt_seen_${learnLang}`) || '[]');
+            learnedWords = JSON.parse(localStorage.getItem(`yt_learned_${learnLang}`) || '[]');
+            loadConfig();init();
+        });
         window.addEventListener('beforeunload',()=>{
             if(player&&player.getCurrentTime){
                 localStorage.setItem(`yt_pos_${videoId}`,Math.floor(player.getCurrentTime()));
@@ -560,6 +573,8 @@
                 var vw=window.innerWidth;
                 var pH=Math.round(vw*9/16);
                 area.style.height=pH+'px';
+                var wrapper=document.getElementById('player');
+                if(wrapper)wrapper.style.height=pH+'px';
                 if(player&&player.setSize)player.setSize(vw,pH);
             }else{
                 area.style.paddingTop='4px';

@@ -191,6 +191,7 @@
             </div>
         </div>
     </div>
+    <script src="sync.js"></script>
     <script>
         const THEME_KEY='yt_theme';
         function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
@@ -421,8 +422,13 @@
                 localStorage.removeItem('yt_reader_text');
             }
         }
-        loadConfig();
-        init();
+        AppSync.ready.then(()=>{
+            learnLang=new URLSearchParams(window.location.search).get('lang')||localStorage.getItem(LEARN_LANG_KEY)||'en';
+            localStorage.setItem(LEARN_LANG_KEY,learnLang);
+            seenWords=JSON.parse(localStorage.getItem(`yt_seen_${learnLang}`)||'[]');
+            learnedWords=JSON.parse(localStorage.getItem(`yt_learned_${learnLang}`)||'[]');
+            loadConfig();init();
+        });
     </script>
 </body>
 </html>
