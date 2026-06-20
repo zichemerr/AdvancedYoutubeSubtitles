@@ -6,7 +6,7 @@ First of all you need to install it. Click all those buttons.
 <img width="550" height="300" alt="image" src="https://github.com/user-attachments/assets/55ac9955-5b86-451e-9b10-c51761731463" />
 
 --------------------------------------------------------------------------------------
-Open the archive and copy the folder on you desktop whatever and open it!.
+Open the archive and copy the folder on your desktop or whatever it might be and open it!.
 Click on the right mouse button right here.
 --------------------------------------------------------------------------------------
 <img width="550" height="300" alt="image" src="https://github.com/user-attachments/assets/0b1f5271-012b-4f1c-934f-f00e043e67e9" />
