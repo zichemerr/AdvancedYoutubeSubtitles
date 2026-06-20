@@ -19,6 +19,6 @@ Click run it as admin
 --------------------------------------------------------------------------------------
 Congrats it actually works!!! And as you can see the terminal window opend 
 and there are linkss so basically you can connect to them by another device,
-but if you close the terminal Astaghfirullah it'll stop working anywhere else
+but if you close the terminal Astaghfirullah it'll stop working
 --------------------------------------------------------------------------------------
 <img width="1920" height="1035" alt="image" src="https://github.com/user-attachments/assets/7e39230a-47b0-43e3-b872-66e03df816e1" />
