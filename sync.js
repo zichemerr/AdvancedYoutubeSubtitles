@@ -73,12 +73,18 @@
         for(const lang in server.videos||{}){
             const key='yt_player_videos_'+lang;
             const local=JSON.parse(localStorage.getItem(key)||'[]');
-            localStorage.setItem(key,JSON.stringify(mergeItemArray(local,server.videos[lang])));
+            const map={};
+            local.forEach(item=>{if(item&&item.id)map[item.id]=item;});
+            (server.videos[lang]||[]).forEach(item=>{if(item&&item.id)map[item.id]=item;});
+            localStorage.setItem(key,JSON.stringify(Object.values(map)));
         }
         for(const lang in server.texts||{}){
             const key='yt_texts_'+lang;
             const local=JSON.parse(localStorage.getItem(key)||'[]');
-            localStorage.setItem(key,JSON.stringify(mergeItemArray(local,server.texts[lang])));
+            const map={};
+            local.forEach(item=>{if(item&&item.id)map[item.id]=item;});
+            (server.texts[lang]||[]).forEach(item=>{if(item&&item.id)map[item.id]=item;});
+            localStorage.setItem(key,JSON.stringify(Object.values(map)));
         }
         for(const id in server.positions||{}){
             const key='yt_pos_'+id;

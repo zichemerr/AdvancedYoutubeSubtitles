@@ -66,7 +66,9 @@ function Get-QueryParam($context, $name) {
 }
 
 function Run-YtDlp([string[]]$argList, $timeoutSec = 60) {
-    $argStr = ($argList | ForEach-Object {
+    $nodePath = "C:/Program Files/nodejs/node.exe"
+    $fullArgs = @("--js-runtimes=node:$nodePath") + $argList
+    $argStr = ($fullArgs | ForEach-Object {
         if ($_ -match '\s' -or $_ -match '"') { "`"$_`"" } else { $_ }
     }) -join ' '
     $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -97,7 +99,7 @@ function Parse-SubLines($stdout) {
     $section = ''
 
     foreach ($line in $lines) {
-        if ($line -match 'Available manual captions') { $section = 'manual'; continue }
+        if ($line -match 'Available subtitles') { $section = 'manual'; continue }
         if ($line -match 'Available automatic captions') { $section = 'auto'; continue }
         if ($section -eq '' -or $line -match '^\s*$') { continue }
         if ($line -match '^Language\s') { continue }
@@ -112,6 +114,7 @@ function Parse-SubLines($stdout) {
         $name = $parts[1].Trim()
 
         if ($langCode -notmatch '^[a-z]{2,3}(-[A-Za-z0-9-]+)?$') { continue }
+        if ($name -match '^(vtt|srt|ttml|srv[123]|json3)(,\s*(vtt|srt|ttml|srv[123]|json3))*$') { continue }
 
         $track = @{
             languageCode = $langCode
@@ -128,6 +131,7 @@ function Parse-SubLines($stdout) {
     return $result
 }
 
+try {
 while ($listener.IsListening) {
     $context = $listener.GetContext()
     $path = $context.Request.Url.LocalPath
@@ -181,7 +185,7 @@ while ($listener.IsListening) {
         $detectedLang = ''
         if ($langResult.exitCode -eq 0 -and $langResult.stdout.Trim()) {
             $raw = $langResult.stdout.Trim().Split("`n")[0].Trim()
-            if ($raw -match '^[a-z]{2,3}(-[A-Za-z0-9-]+)?$') { $detectedLang = $raw }
+            if ($raw -match '^[a-z]{2,3}(-[A-Za-z0-9-]+)?$' -and $raw -ne 'NA') { $detectedLang = $raw }
         }
         Write-Host "[captions] yt-dlp language: '$detectedLang'"
 
@@ -367,22 +371,12 @@ while ($listener.IsListening) {
                 }
                 if ($incoming.videos -and ($incoming.videos -is [PSCustomObject])) {
                     foreach ($p in $incoming.videos.PSObject.Properties) {
-                        $lang = $p.Name; $newArr = @($p.Value)
-                        if (-not $existing.videos.ContainsKey($lang)) { $existing.videos[$lang] = @() }
-                        $byId = @{}
-                        foreach ($item in $existing.videos[$lang]) { if ($item.id) { $byId[$item.id] = $item } }
-                        foreach ($item in $newArr) { if ($item.id) { $byId[$item.id] = $item } }
-                        $existing.videos[$lang] = @($byId.Values)
+                        $existing.videos[$p.Name] = @($p.Value)
                     }
                 }
                 if ($incoming.texts -and ($incoming.texts -is [PSCustomObject])) {
                     foreach ($p in $incoming.texts.PSObject.Properties) {
-                        $lang = $p.Name; $newArr = @($p.Value)
-                        if (-not $existing.texts.ContainsKey($lang)) { $existing.texts[$lang] = @() }
-                        $byId = @{}
-                        foreach ($item in $existing.texts[$lang]) { if ($item.id) { $byId[$item.id] = $item } }
-                        foreach ($item in $newArr) { if ($item.id) { $byId[$item.id] = $item } }
-                        $existing.texts[$lang] = @($byId.Values)
+                        $existing.texts[$p.Name] = @($p.Value)
                     }
                 }
                 if ($incoming.positions -and ($incoming.positions -is [PSCustomObject])) {
@@ -391,6 +385,11 @@ while ($listener.IsListening) {
                         $oldPos = 0
                         if ($existing.positions.ContainsKey($p.Name)) { $oldPos = [int]$existing.positions[$p.Name] }
                         if ($newPos -gt $oldPos) { $existing.positions[$p.Name] = $newPos }
+                    }
+                    foreach ($key in @($existing.positions.Keys)) {
+                        if (-not ($incoming.positions.PSObject.Properties.Name -contains $key)) {
+                            $existing.positions.Remove($key)
+                        }
                     }
                 }
                 if ($incoming.settings -and ($incoming.settings -is [PSCustomObject])) {
@@ -424,7 +423,15 @@ while ($listener.IsListening) {
     }
     else {
         $file = Join-Path $PSScriptRoot $path.TrimStart('/')
-        if (-not (Test-Path $file)) { $context.Response.StatusCode = 404; $context.Response.Close(); continue }
+        if (-not (Test-Path $file) -or (Get-Item $file).PSIsContainer) {
+            if ($path.TrimStart('/') -eq '') {
+                $loc = "http://${bindHost}:${port}/Main.html"
+                $context.Response.Redirect($loc)
+                $context.Response.Close()
+                continue
+            }
+            $context.Response.StatusCode = 404; $context.Response.Close(); continue
+        }
         $bytes = [IO.File]::ReadAllBytes($file)
         $ext = [IO.Path]::GetExtension($file)
         $context.Response.ContentType = switch ($ext) {
@@ -445,4 +452,8 @@ while ($listener.IsListening) {
         $context.Response.OutputStream.Write($bytes, 0, $bytes.Length)
         $context.Response.Close()
     }
+}
+} catch {
+    Write-Host "[FATAL] Server crashed: $_"
+    Write-Host $_.ScriptStackTrace
 }

@@ -256,6 +256,8 @@
         let APP_CONFIG=null;
         const targetLangKey='yt_player_target_lang';
         const LEARN_LANG_KEY='yt_learn_lang';
+        function baseLang(l){return(l||'').split('-')[0].toLowerCase();}
+        function sameLang(a,b){return baseLang(a)===baseLang(b);}
         let targetLang = localStorage.getItem(targetLangKey) || 'ru';
         let learnLang = new URLSearchParams(window.location.search).get('lang') || localStorage.getItem(LEARN_LANG_KEY) || 'en';
         localStorage.setItem(LEARN_LANG_KEY, learnLang);
@@ -314,26 +316,28 @@
         function saveSeenWords(){localStorage.setItem(`yt_seen_${learnLang}`,JSON.stringify([...new Set(seenWords)]));}
         function saveLearnedWords(){localStorage.setItem(`yt_learned_${learnLang}`,JSON.stringify([...new Set(learnedWords)]));}
         function markSeen(text){
-            if(sourceLang!==learnLang)return;
+            if(!sameLang(sourceLang,learnLang))return;
             const words=text.split(/\s+/).map(w=>w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')).filter(w=>w.length>=1);
             let changed=false;
             words.forEach(w=>{if(learnedWords.includes(w))return;if(!seenWords.includes(w)){seenWords.push(w);changed=true;}});
             if(changed)saveSeenWords();
         }
         function markLearned(word){
-            if(sourceLang!==learnLang)return;
+            if(!sameLang(sourceLang,learnLang))return;
             const w=word.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');if(!w)return;
             if(!learnedWords.includes(w)){learnedWords.push(w);saveLearnedWords();}
             seenWords=seenWords.filter(s=>s!==w);saveSeenWords();
         }
         function getWordClass(word){
-            if(sourceLang!==learnLang)return'';
+            if(!sameLang(sourceLang,learnLang))return'';
             const w=word.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
             if(!w)return'';if(learnedWords.includes(w))return'';if(seenWords.includes(w))return'word-seen';return'word-unknown';
         }
         function getVideoId(){return new URLSearchParams(window.location.search).get('v');}
         async function apiFetch(path){const res=await fetch(path);const data=await res.json();if(data.error)throw new Error(data.error);return data;}
         function findBestTrack(tracks,lang){
+            const fmtRe=/\s*(vtt|srt|ttml|srv[123]|json3)(,\s*(vtt|srt|ttml|srv[123]|json3))*$/i;
+            tracks.forEach(t=>{if(t.name)t.name=t.name.replace(fmtRe,'').trim()});
             const manual=tracks.filter(t=>t.section==='manual');
             if(manual.length>0){
                 return manual.find(t=>t.languageCode===lang)
@@ -379,7 +383,7 @@
                 div.querySelectorAll('.word').forEach(wordEl=>{
                     wordEl.addEventListener('mouseup',e=>{
                         setTimeout(()=>{
-                            if(sourceLang!==learnLang){window.getSelection().removeAllRanges();return;}
+                            if(!sameLang(sourceLang,learnLang)){window.getSelection().removeAllRanges();return;}
                             const sel=window.getSelection();const selText=sel?sel.toString().trim():'';
                             e.stopPropagation();
                             if(selText.length>0){const r=sel.getRangeAt(0);const rc=r.getBoundingClientRect();showTranslate(selText,rc.right+8,rc.top-10);}
@@ -415,7 +419,7 @@
             document.getElementById('speakBtn').onclick=()=>speakWord(currentTranslateText,sourceLang);
             updateLearnBtn();
             learnBtn.onclick=()=>{
-                if(sourceLang!==learnLang){document.getElementById('translatePopup').classList.remove('show');if(player&&player.playVideo)player.playVideo();return;}
+                if(!sameLang(sourceLang,learnLang)){document.getElementById('translatePopup').classList.remove('show');if(player&&player.playVideo)player.playVideo();return;}
                 const words=currentTranslateText.split(/\s+/).map(w=>w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')).filter(w=>w.length>=1);
                 if(words.length===0)return;
                 if(words.every(w=>learnedWords.includes(w))){words.forEach(w=>{learnedWords=learnedWords.filter(l=>l!==w);if(!seenWords.includes(w))seenWords.push(w);});}
@@ -436,7 +440,7 @@
         }
         function updateLearnBtn(){
             const btn=document.getElementById('learnBtn');
-            if(sourceLang!==learnLang){btn.style.display='none';return;}btn.style.display='';
+            if(!sameLang(sourceLang,learnLang)){btn.style.display='none';return;}btn.style.display='';
             const words=currentTranslateText.split(/\s+/).map(w=>w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')).filter(w=>w.length>=1);
             const done=words.length>0&&words.every(w=>learnedWords.includes(w));
             btn.classList.toggle('learned',done);
@@ -543,7 +547,7 @@
             try{const saved=JSON.parse(localStorage.getItem(`yt_player_videos_${learnLang}`))||[];const found=saved.find(v=>v.id===videoId);
             if(found&&found.lines&&found.lines.length>0){savedLines=found.lines;sourceLang=found.lang||'en';document.getElementById('langInfo').textContent=`${found.trackName||found.lang} → ${learnLang}`;if(found.title&&found.title!==videoId)document.title=found.title;}}catch{}
             if(savedLines){buildLines(savedLines);return;}
-            try{const cd=await apiFetch(`/api/captions?v=${videoId}`);const tracks=cd.tracks||[];const dl=cd.detectedLanguage||'en';sourceLang=dl;
+            try{const cd=await apiFetch(`/api/captions?v=${videoId}`);const tracks=cd.tracks||[];const dl=(cd.detectedLanguage&&cd.detectedLanguage!=='NA')?cd.detectedLanguage:'en';sourceLang=dl;
             if(!tracks.length){document.getElementById('noSubs').textContent='This video has no subtitles';return;}
             const track=findBestTrack(tracks,dl);document.getElementById('langInfo').textContent=`${track.name||track.languageCode} → ${learnLang}`;
             const sd=await apiFetch(`/api/subtitles?v=${videoId}&lang=${encodeURIComponent(track.languageCode)}`);buildLines(sd.lines||[]);

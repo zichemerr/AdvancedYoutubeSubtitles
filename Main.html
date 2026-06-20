@@ -425,8 +425,8 @@
             localStorage.setItem(`yt_seen_${lang}`, JSON.stringify(seen));
             renderDict();
         }
-        function clearSeenWords() { if (!confirm('Clear learning words?')) return; localStorage.removeItem(`yt_seen_${getLearnLang()}`); renderDict(); }
-        function clearLearnedWords() { if (!confirm('Clear learned words?')) return; localStorage.removeItem(`yt_learned_${getLearnLang()}`); renderDict(); }
+        function clearSeenWords() { if (!confirm('Clear learning words?')) return; localStorage.setItem(`yt_seen_${getLearnLang()}`, '[]'); renderDict(); }
+        function clearLearnedWords() { if (!confirm('Clear learned words?')) return; localStorage.setItem(`yt_learned_${getLearnLang()}`, '[]'); renderDict(); }
         function openDictFullscreen() { document.getElementById('dictOverlay').classList.add('open'); }
         function closeDictFullscreen() { document.getElementById('dictOverlay').classList.remove('open'); }
         const learnLangSelect = document.getElementById('learnLang');
@@ -443,6 +443,8 @@
             return null;
         }
         function findBestTrack(tracks, lang) {
+            const fmtRe = /\s*(vtt|srt|ttml|srv[123]|json3)(,\s*(vtt|srt|ttml|srv[123]|json3))*$/i;
+            tracks.forEach(t => { if (t.name) t.name = t.name.replace(fmtRe, '').trim(); });
             const manual = tracks.filter(t => t.section === 'manual');
             if (manual.length > 0) {
                 return manual.find(t => t.languageCode === lang)
@@ -470,7 +472,7 @@
             try {
                 const captionsData = await apiFetch(`/api/captions?v=${id}`);
                 const tracks = captionsData.tracks || [];
-                const detectedLang = captionsData.detectedLanguage || 'en';
+                const detectedLang = (captionsData.detectedLanguage && captionsData.detectedLanguage !== 'NA') ? captionsData.detectedLanguage : 'en';
                 let subsLines = [], trackName = '';
                 if (tracks.length > 0) {
                     const track = findBestTrack(tracks, detectedLang);
@@ -493,7 +495,7 @@
         function openVideo(id) { window.location.href = `Player.html?v=${id}&lang=${getLearnLang()}`; }
         function deleteVideo(id, e) { e.stopPropagation(); saveVideos(getSavedVideos().filter(v => v.id !== id)); renderList(); }
         function clearList() { document.getElementById('clearModal').classList.add('show'); }
-        document.getElementById('clearConfirm').addEventListener('click', () => { localStorage.removeItem(getStorageKey()); document.getElementById('clearModal').classList.remove('show'); renderList(); });
+        document.getElementById('clearConfirm').addEventListener('click', () => { saveVideos([]); document.getElementById('clearModal').classList.remove('show'); renderList(); });
         function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
         function switchTab(tab){
             document.getElementById('tabUrl').classList.toggle('active',tab==='url');
@@ -522,7 +524,7 @@
         function saveTexts(lang,texts){try{localStorage.setItem(getTextStorageKey(lang),JSON.stringify(texts));return true;}catch{return false;}}
         function openText(id){window.location.href=`Reader.html?id=${id}&lang=${getLearnLang()}`;}
         function deleteText(id,e){e.stopPropagation();const lang=getLearnLang();saveTexts(lang,getSavedTexts(lang).filter(t=>t.id!==id));renderTexts();}
-        function clearTexts(){if(!confirm('Delete all saved texts?'))return;localStorage.removeItem(getTextStorageKey(getLearnLang()));renderTexts();}
+        function clearTexts(){if(!confirm('Delete all saved texts?'))return;saveTexts(getLearnLang(),[]);renderTexts();}
         function getTextWordStats(text){
             if(!text)return{blue:0,yellow:0};
             const learned=getLearnedWords();const seen=getSeenWords();
