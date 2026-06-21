@@ -1,8 +1,9 @@
 (function(){
     const ARRAY_PREFIXES=['yt_seen_','yt_learned_','yt_player_videos_','yt_texts_'];
+    const DEL_PREFIXES=['yt_deleted_videos_','yt_deleted_texts_'];
     const POS_PREFIX='yt_pos_';
     const SCALAR_KEYS=['yt_learn_lang','yt_player_target_lang','yt_theme'];
-    const ALL_PREFIXES=[...ARRAY_PREFIXES,POS_PREFIX];
+    const ALL_PREFIXES=[...ARRAY_PREFIXES,...DEL_PREFIXES,POS_PREFIX];
     let lastSyncTs=0;
     let syncTimer=null;
     let syncing=false;
@@ -13,6 +14,7 @@
     }
 
     function categorizeKey(k){
+        for(const p of DEL_PREFIXES)if(k.startsWith(p))return{cat:'deleted',prefix:p,lang:k.slice(p.length)};
         for(const p of ARRAY_PREFIXES)if(k.startsWith(p))return{cat:'array',prefix:p,lang:k.slice(p.length)};
         if(k.startsWith(POS_PREFIX))return{cat:'position',id:k.slice(POS_PREFIX.length)};
         if(SCALAR_KEYS.includes(k))return{cat:'settings',key:k};
@@ -20,7 +22,7 @@
     }
 
     function collectState(){
-        const state={seen:{},learned:{},videos:{},texts:{},positions:{},settings:{}};
+        const state={seen:{},learned:{},videos:{},texts:{},deletedVideos:{},deletedTexts:{},positions:{},settings:{}};
         for(let i=0;i<localStorage.length;i++){
             const k=localStorage.key(i);
             const info=categorizeKey(k);
@@ -32,6 +34,10 @@
                     else if(info.prefix==='yt_learned_')state.learned[info.lang]=arr;
                     else if(info.prefix==='yt_player_videos_')state.videos[info.lang]=arr;
                     else if(info.prefix==='yt_texts_')state.texts[info.lang]=arr;
+                }else if(info.cat==='deleted'){
+                    const arr=JSON.parse(localStorage.getItem(k)||'[]');
+                    if(info.prefix==='yt_deleted_videos_')state.deletedVideos[info.lang]=arr;
+                    else if(info.prefix==='yt_deleted_texts_')state.deletedTexts[info.lang]=arr;
                 }else if(info.cat==='position'){
                     const v=parseInt(localStorage.getItem(k)||'0',10);
                     if(v>0)state.positions[info.id]=v;
@@ -58,6 +64,12 @@
         return Object.values(map);
     }
 
+    function mergeDeleted(existing,incoming){
+        if(!Array.isArray(existing))existing=[];
+        if(!Array.isArray(incoming))incoming=[];
+        return[...new Set([...existing,...incoming])];
+    }
+
     function applyServerState(server){
         if(!server)return;
         for(const lang in server.seen||{}){
@@ -72,19 +84,27 @@
         }
         for(const lang in server.videos||{}){
             const key='yt_player_videos_'+lang;
+            const delKey='yt_deleted_videos_'+lang;
             const local=JSON.parse(localStorage.getItem(key)||'[]');
-            const map={};
-            local.forEach(item=>{if(item&&item.id)map[item.id]=item;});
-            (server.videos[lang]||[]).forEach(item=>{if(item&&item.id)map[item.id]=item;});
-            localStorage.setItem(key,JSON.stringify(Object.values(map)));
+            const localDel=JSON.parse(localStorage.getItem(delKey)||'[]');
+            const serverDel=server.deletedVideos&&server.deletedVideos[lang]||[];
+            const allDel=[...new Set([...localDel,...serverDel])];
+            const merged=mergeItemArray(local,server.videos[lang]);
+            const filtered=merged.filter(item=>!allDel.includes(item.id));
+            localStorage.setItem(key,JSON.stringify(filtered));
+            localStorage.setItem(delKey,JSON.stringify(allDel));
         }
         for(const lang in server.texts||{}){
             const key='yt_texts_'+lang;
+            const delKey='yt_deleted_texts_'+lang;
             const local=JSON.parse(localStorage.getItem(key)||'[]');
-            const map={};
-            local.forEach(item=>{if(item&&item.id)map[item.id]=item;});
-            (server.texts[lang]||[]).forEach(item=>{if(item&&item.id)map[item.id]=item;});
-            localStorage.setItem(key,JSON.stringify(Object.values(map)));
+            const localDel=JSON.parse(localStorage.getItem(delKey)||'[]');
+            const serverDel=server.deletedTexts&&server.deletedTexts[lang]||[];
+            const allDel=[...new Set([...localDel,...serverDel])];
+            const merged=mergeItemArray(local,server.texts[lang]);
+            const filtered=merged.filter(item=>!allDel.includes(item.id));
+            localStorage.setItem(key,JSON.stringify(filtered));
+            localStorage.setItem(delKey,JSON.stringify(allDel));
         }
         for(const id in server.positions||{}){
             const key='yt_pos_'+id;

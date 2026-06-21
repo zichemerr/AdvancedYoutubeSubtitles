@@ -34,15 +34,15 @@
         .sub-text { color: #ccc; font-size: 1.25rem; line-height: 1.55; flex: 1; display: flex; flex-wrap: wrap; gap: 6px 8px; }
         .no-content { color: #666; font-style: italic; text-align: center; padding: 60px 20px; }
 
-        .sub-text span.word { cursor: pointer; border-radius: 8px; transition: all 0.15s; padding: 2px 4px; }
-        .sub-text span.word:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .sub-text span.word { cursor: pointer; border-radius: 8px; transition: all 0.15s; padding: 2px 4px; display: inline-block; }
+        .sub-text span.word:hover { background: rgba(255, 255, 255, 0.15); color: #fff; transform: scale(1.05); }
         .sub-text span.word.word-unknown { background: rgba(56, 152, 255, 0.15); border: 1px solid rgba(56, 152, 255, 0.4); border-radius: 8px; padding: 2px 6px; color: #fff; }
         .sub-text span.word.word-seen { background: rgba(255, 200, 0, 0.15); border: 1px solid rgba(255, 200, 0, 0.4); border-radius: 8px; padding: 2px 6px; color: #FFD700; }
-        .sub-text span.word.word-unknown:hover { background: rgba(56, 152, 255, 0.25); border-color: rgba(56, 152, 255, 0.6); }
-        .sub-text span.word.word-seen:hover { background: rgba(255, 200, 0, 0.25); border-color: rgba(255, 200, 0, 0.6); }
+        .sub-text span.word.word-unknown:hover { background: rgba(56, 152, 255, 0.35); border-color: rgba(56, 152, 255, 0.7); color: #fff; transform: scale(1.05); box-shadow: 0 0 12px rgba(56, 152, 255, 0.4); }
+        .sub-text span.word.word-seen:hover { background: rgba(255, 200, 0, 0.35); border-color: rgba(255, 200, 0, 0.7); color: #FFD700; transform: scale(1.05); box-shadow: 0 0 12px rgba(255, 200, 0, 0.4); }
 
-        .sub-translate-btn { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #444; background: transparent; color: #888; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; align-self: center; opacity: 0; user-select: none; -webkit-user-select: none; }
-        .sub-line:hover .sub-translate-btn { opacity: 1; }
+        .sub-translate-btn { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #444; background: transparent; color: #888; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; align-self: center; opacity: 1; user-select: none; -webkit-user-select: none; }
+        .sub-line:hover .sub-translate-btn { background: rgba(217, 70, 168, 0.1); border-color: #D946A8; color: #D946A8; }
         .sub-translate-btn:hover { background: rgba(217, 70, 168, 0.1); border-color: #D946A8; color: #D946A8; }
 
         .translate-popup { position: fixed; background: #1a1a1a; border: 1px solid #333; border-radius: 24px; padding: 14px 22px; z-index: 100; min-width: 280px; max-width: 360px; max-height: 80vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6); display: none; backdrop-filter: blur(12px); }
@@ -109,9 +109,11 @@
         body.light-theme .sub-time { color: #dd9bb3; }
         body.light-theme .sub-text { color: #9a7a8c; display: flex; flex-wrap: wrap; gap: 6px 8px; }
         body.light-theme .no-content { color: #d47599; }
-        body.light-theme .sub-text span.word:hover { background: #ffe0f0; color: #75556b; }
+        body.light-theme .sub-text span.word:hover { background: #ffe0f0; color: #75556b; transform: scale(1.05); }
         body.light-theme .sub-text span.word.word-unknown { background: rgba(56, 152, 255, 0.12); border-color: rgba(56, 152, 255, 0.35); color: #5a8fd4; }
         body.light-theme .sub-text span.word.word-seen { background: rgba(255, 200, 0, 0.15); border-color: rgba(255, 200, 0, 0.4); color: #b8960a; }
+        body.light-theme .sub-text span.word.word-unknown:hover { background: rgba(56, 152, 255, 0.25); border-color: rgba(56, 152, 255, 0.5); transform: scale(1.05); box-shadow: 0 0 10px rgba(56, 152, 255, 0.25); }
+        body.light-theme .sub-text span.word.word-seen:hover { background: rgba(255, 200, 0, 0.25); border-color: rgba(255, 200, 0, 0.5); transform: scale(1.05); box-shadow: 0 0 10px rgba(255, 200, 0, 0.25); }
         body.light-theme .sub-translate-btn { border-color: #ffc7dd; color: #dd9bb3; }
         body.light-theme .sub-translate-btn:hover { background: #ffe0ec; border-color: #f2a0bb; color: #c25a7a; }
         body.light-theme .translate-popup { background: #fff7fb; border-color: #ffc0d6; box-shadow: 0 12px 28px rgba(190, 80, 110, 0.3); }
@@ -145,6 +147,23 @@
         body.light-theme .modal-word.removed { background: rgba(232, 92, 92, 0.08); border-color: rgba(232, 92, 92, 0.3); color: #dd9bb3; }
         body.light-theme .modal-btn-no { background: #ffeef4; color: #c26889; border-color: #ffc7dd; }
         body.light-theme .modal-btn-no:hover { background: #ffe0ec; }
+
+        @media (max-width: 700px) {
+            .topbar { padding: 6px 12px; }
+            .topbar-brand { font-size: 0.9rem; }
+            .back-btn { padding: 5px 12px; font-size: 0.75rem; }
+            .reader-container { padding: 12px 10px 40px; }
+            .sub-line { padding: 10px 8px; gap: 8px; }
+            .sub-text { font-size: 1.15rem; line-height: 1.7; gap: 5px 6px; }
+            .sub-time { font-size: 0.8rem; min-width: 40px; }
+            .sub-translate-btn { width: 32px; height: 32px; font-size: 0.85rem; opacity: 1; }
+            .translate-popup { min-width: 240px; max-width: 90vw; left: 5vw !important; right: 5vw; padding: 12px 16px; }
+            .finish-btn { font-size: 0.85rem; padding: 10px; border-radius: 0; }
+            .word { padding: 3px 5px !important; }
+            .topbar-controls { gap: 6px; }
+            .lang-select { font-size: 0.8rem; padding: 4px 8px; }
+            .gtranslate-btn { font-size: 0.75rem; padding: 4px 10px; }
+        }
     </style>
 </head>
 <body>

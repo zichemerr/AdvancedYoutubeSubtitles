@@ -493,9 +493,9 @@
             finally { btn.disabled = false; btn.textContent = 'Open'; }
         }
         function openVideo(id) { window.location.href = `Player.html?v=${id}&lang=${getLearnLang()}`; }
-        function deleteVideo(id, e) { e.stopPropagation(); saveVideos(getSavedVideos().filter(v => v.id !== id)); renderList(); }
+        function deleteVideo(id, e) { e.stopPropagation(); const lang=getLearnLang(); const delKey=`yt_deleted_videos_${lang}`; const del=JSON.parse(localStorage.getItem(delKey)||'[]'); del.push(id); localStorage.setItem(delKey,JSON.stringify([...new Set(del)])); saveVideos(getSavedVideos().filter(v => v.id !== id)); renderList(); }
         function clearList() { document.getElementById('clearModal').classList.add('show'); }
-        document.getElementById('clearConfirm').addEventListener('click', () => { saveVideos([]); document.getElementById('clearModal').classList.remove('show'); renderList(); });
+        document.getElementById('clearConfirm').addEventListener('click', () => { const lang=getLearnLang(); const vids=getSavedVideos(); const delKey=`yt_deleted_videos_${lang}`; const del=JSON.parse(localStorage.getItem(delKey)||'[]'); vids.forEach(v=>{if(v.id)del.push(v.id)}); localStorage.setItem(delKey,JSON.stringify([...new Set(del)])); saveVideos([]); document.getElementById('clearModal').classList.remove('show'); renderList(); });
         function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
         function switchTab(tab){
             document.getElementById('tabUrl').classList.toggle('active',tab==='url');
@@ -523,8 +523,8 @@
         function getSavedTexts(lang){try{return JSON.parse(localStorage.getItem(getTextStorageKey(lang)))||[];}catch{return[];}}
         function saveTexts(lang,texts){try{localStorage.setItem(getTextStorageKey(lang),JSON.stringify(texts));return true;}catch{return false;}}
         function openText(id){window.location.href=`Reader.html?id=${id}&lang=${getLearnLang()}`;}
-        function deleteText(id,e){e.stopPropagation();const lang=getLearnLang();saveTexts(lang,getSavedTexts(lang).filter(t=>t.id!==id));renderTexts();}
-        function clearTexts(){if(!confirm('Delete all saved texts?'))return;saveTexts(getLearnLang(),[]);renderTexts();}
+        function deleteText(id,e){e.stopPropagation();const lang=getLearnLang();const delKey=`yt_deleted_texts_${lang}`;const del=JSON.parse(localStorage.getItem(delKey)||'[]');del.push(id);localStorage.setItem(delKey,JSON.stringify([...new Set(del)]));saveTexts(lang,getSavedTexts(lang).filter(t=>t.id!==id));renderTexts();}
+        function clearTexts(){if(!confirm('Delete all saved texts?'))return;const lang=getLearnLang();const texts=getSavedTexts(lang);const delKey=`yt_deleted_texts_${lang}`;const del=JSON.parse(localStorage.getItem(delKey)||'[]');texts.forEach(t=>{if(t.id)del.push(t.id)});localStorage.setItem(delKey,JSON.stringify([...new Set(del)]));saveTexts(lang,[]);renderTexts();}
         function getTextWordStats(text){
             if(!text)return{blue:0,yellow:0};
             const learned=getLearnedWords();const seen=getSeenWords();
@@ -599,7 +599,7 @@
             }).join('');
         }
         document.getElementById('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') loadVideo(); });
-        AppSync.ready.then(()=>loadConfig());
+        AppSync.ready.then(()=>{renderList();renderTexts();renderDict();loadConfig();});
         async function updateOldTitles(){
             if (!APP_CONFIG) return;
             const videos=getSavedVideos();let changed=false;

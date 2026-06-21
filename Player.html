@@ -41,15 +41,15 @@
         .placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: #444; font-size: 0.9rem; font-weight: 500; }
         .no-subs { color: #666; font-style: italic; text-align: center; padding: 40px; }
 
-        .sub-text span.word { cursor: pointer; border-radius: 8px; transition: all 0.15s; padding: 2px 4px; }
-        .sub-text span.word:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .sub-text span.word { cursor: pointer; border-radius: 8px; transition: all 0.15s; padding: 2px 4px; display: inline-block; }
+        .sub-text span.word:hover { background: rgba(255, 255, 255, 0.15); color: #fff; transform: scale(1.05); }
         .sub-text span.word.word-unknown { background: rgba(56, 152, 255, 0.15); border: 1px solid rgba(56, 152, 255, 0.4); border-radius: 8px; padding: 2px 6px; color: #fff; }
         .sub-text span.word.word-seen { background: rgba(255, 200, 0, 0.15); border: 1px solid rgba(255, 200, 0, 0.4); border-radius: 8px; padding: 2px 6px; color: #FFD700; }
-        .sub-text span.word.word-unknown:hover { background: rgba(56, 152, 255, 0.25); border-color: rgba(56, 152, 255, 0.6); }
-        .sub-text span.word.word-seen:hover { background: rgba(255, 200, 0, 0.25); border-color: rgba(255, 200, 0, 0.6); }
+        .sub-text span.word.word-unknown:hover { background: rgba(56, 152, 255, 0.35); border-color: rgba(56, 152, 255, 0.7); color: #fff; transform: scale(1.05); box-shadow: 0 0 12px rgba(56, 152, 255, 0.4); }
+        .sub-text span.word.word-seen:hover { background: rgba(255, 200, 0, 0.35); border-color: rgba(255, 200, 0, 0.7); color: #FFD700; transform: scale(1.05); box-shadow: 0 0 12px rgba(255, 200, 0, 0.4); }
 
-        .sub-translate-btn { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #444; background: transparent; color: #888; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; align-self: center; opacity: 0; user-select: none; -webkit-user-select: none; }
-        .sub-line:hover .sub-translate-btn { opacity: 1; }
+        .sub-translate-btn { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #444; background: transparent; color: #888; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; align-self: center; opacity: 1; user-select: none; -webkit-user-select: none; }
+        .sub-line:hover .sub-translate-btn { background: rgba(217, 70, 168, 0.1); border-color: #D946A8; color: #D946A8; }
         .sub-translate-btn:hover { background: rgba(217, 70, 168, 0.1); border-color: #D946A8; color: #D946A8; }
 
         .finish-btn { width: 100%; padding: 10px; margin-top: 6px; border: 2px solid #58CC02; border-radius: 12px; background: rgba(88, 204, 2, 0.08); color: #58CC02; font-size: 0.9rem; font-weight: 700; font-family: 'Quicksand', sans-serif; cursor: pointer; transition: all 0.2s; animation: fadeIn 0.4s ease; }
@@ -123,11 +123,11 @@
         body.light-theme .sub-text { color: #9a7a8c; display: flex; flex-wrap: wrap; gap: 6px 8px; }
         body.light-theme .placeholder { color: #dd9bb3; }
         body.light-theme .no-subs { color: #d47599; }
-        body.light-theme .sub-text span.word:hover { background: #ffe0f0; color: #75556b; }
+        body.light-theme .sub-text span.word:hover { background: #ffe0f0; color: #75556b; transform: scale(1.05); }
         body.light-theme .sub-text span.word.word-unknown { background: rgba(56, 152, 255, 0.12); border-color: rgba(56, 152, 255, 0.35); color: #5a8fd4; }
         body.light-theme .sub-text span.word.word-seen { background: rgba(255, 200, 0, 0.15); border-color: rgba(255, 200, 0, 0.4); color: #b8960a; }
-        body.light-theme .sub-text span.word.word-unknown:hover { background: rgba(56, 152, 255, 0.2); border-color: rgba(56, 152, 255, 0.5); }
-        body.light-theme .sub-text span.word.word-seen:hover { background: rgba(255, 200, 0, 0.25); border-color: rgba(255, 200, 0, 0.6); }
+        body.light-theme .sub-text span.word.word-unknown:hover { background: rgba(56, 152, 255, 0.25); border-color: rgba(56, 152, 255, 0.5); transform: scale(1.05); box-shadow: 0 0 10px rgba(56, 152, 255, 0.25); }
+        body.light-theme .sub-text span.word.word-seen:hover { background: rgba(255, 200, 0, 0.25); border-color: rgba(255, 200, 0, 0.5); transform: scale(1.05); box-shadow: 0 0 10px rgba(255, 200, 0, 0.25); }
         body.light-theme .sub-translate-btn { border-color: #ffc7dd; color: #dd9bb3; }
         body.light-theme .sub-translate-btn:hover { background: #ffe0ec; border-color: #f2a0bb; color: #c25a7a; }
         body.light-theme .modal-overlay { background: rgba(117, 85, 107, 0.4); }
@@ -180,13 +180,16 @@
             .subs-area { padding: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
             .subs-box { max-height: none; border-radius: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
             .subs-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 14px; }
-            .sub-line { padding: 8px 10px; gap: 10px; }
+            .sub-line { padding: 10px 10px; gap: 10px; }
             .sub-time { font-size: 0.8rem; min-width: 40px; }
-            .sub-text { font-size: 1.05rem; }
-            .sub-translate-btn { width: 30px; height: 30px; font-size: 0.8rem; }
+            .sub-text { font-size: 1.15rem; line-height: 1.7; gap: 5px 6px; }
+            .sub-translate-btn { width: 32px; height: 32px; font-size: 0.85rem; opacity: 1; }
             .translate-popup { min-width: 240px; max-width: 90vw; left: 5vw !important; right: 5vw; }
             .finish-btn { font-size: 0.85rem; padding: 8px; border-radius: 0; }
             .placeholder { flex: 1; }
+            .word { padding: 3px 5px !important; }
+            .topbar-controls { gap: 6px; }
+            .lang-select { font-size: 0.8rem; padding: 4px 8px; }
         }
     </style>
 </head>
@@ -317,21 +320,21 @@
         function saveLearnedWords(){localStorage.setItem(`yt_learned_${learnLang}`,JSON.stringify([...new Set(learnedWords)]));}
         function markSeen(text){
             if(!sameLang(sourceLang,learnLang))return;
-            const words=text.split(/\s+/).map(w=>w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')).filter(w=>w.length>=1);
+            const words=text.split(/\s+/).map(w=>w.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')).filter(w=>w.length>=1&&isWordInLang(w,learnLang));
             let changed=false;
             words.forEach(w=>{if(learnedWords.includes(w))return;if(!seenWords.includes(w)){seenWords.push(w);changed=true;}});
             if(changed)saveSeenWords();
         }
         function markLearned(word){
             if(!sameLang(sourceLang,learnLang))return;
-            const w=word.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');if(!w)return;
+            const w=word.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');if(!w||!isWordInLang(w,learnLang))return;
             if(!learnedWords.includes(w)){learnedWords.push(w);saveLearnedWords();}
             seenWords=seenWords.filter(s=>s!==w);saveSeenWords();
         }
         function getWordClass(word){
             if(!sameLang(sourceLang,learnLang))return'';
             const w=word.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
-            if(!w)return'';if(learnedWords.includes(w))return'';if(seenWords.includes(w))return'word-seen';return'word-unknown';
+            if(!w||!isWordInLang(w,learnLang))return'';if(learnedWords.includes(w))return'';if(seenWords.includes(w))return'word-seen';return'word-unknown';
         }
         function getVideoId(){return new URLSearchParams(window.location.search).get('v');}
         async function apiFetch(path){const res=await fetch(path);const data=await res.json();if(data.error)throw new Error(data.error);return data;}
@@ -387,7 +390,7 @@
                             const sel=window.getSelection();const selText=sel?sel.toString().trim():'';
                             e.stopPropagation();
                             if(selText.length>0){const r=sel.getRangeAt(0);const rc=r.getBoundingClientRect();showTranslate(selText,rc.right+8,rc.top-10);}
-                            else{const w=wordEl.getAttribute('data-word')||wordEl.textContent.trim();if(w.length>0){markSeen(w);refreshWordClasses();const rc=wordEl.getBoundingClientRect();showTranslate(w,rc.right+8,rc.top-10);}}
+                            else{const w=wordEl.getAttribute('data-word')||wordEl.textContent.trim();if(w.length>0&&!isWordInLang(w,learnLang)){window.getSelection().removeAllRanges();return;}if(w.length>0){markSeen(w);refreshWordClasses();const rc=wordEl.getBoundingClientRect();showTranslate(w,rc.right+8,rc.top-10);}}
                         },10);
                     });
                 });

@@ -135,6 +135,7 @@ try {
 while ($listener.IsListening) {
     $context = $listener.GetContext()
     $path = $context.Request.Url.LocalPath
+    try {
 
     if ($path -eq '/api/config') {
         $clientConfig = @{
@@ -342,16 +343,18 @@ while ($listener.IsListening) {
                 $body = $reader.ReadToEnd()
                 $incoming = $body | ConvertFrom-Json
 
-                $existing = @{seen=@{}; learned=@{}; videos=@{}; texts=@{}; positions=@{}; settings=@{}; timestamp=0}
+                $existing = @{seen=@{}; learned=@{}; videos=@{}; texts=@{}; deletedVideos=@{}; deletedTexts=@{}; positions=@{}; settings=@{}; timestamp=0}
                 if (Test-Path $syncPath) {
                     try {
                         $raw = [System.IO.File]::ReadAllText($syncPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
-                        if ($raw.seen)       { foreach ($p in $raw.seen.PSObject.Properties)       { $existing.seen[$p.Name] = @($p.Value) } }
-                        if ($raw.learned)    { foreach ($p in $raw.learned.PSObject.Properties)    { $existing.learned[$p.Name] = @($p.Value) } }
-                        if ($raw.videos)     { foreach ($p in $raw.videos.PSObject.Properties)     { $existing.videos[$p.Name] = @($p.Value) } }
-                        if ($raw.texts)      { foreach ($p in $raw.texts.PSObject.Properties)      { $existing.texts[$p.Name] = @($p.Value) } }
-                        if ($raw.positions)  { foreach ($p in $raw.positions.PSObject.Properties)  { $existing.positions[$p.Name] = [int]$p.Value } }
-                        if ($raw.settings)   { foreach ($p in $raw.settings.PSObject.Properties)   { $existing.settings[$p.Name] = $p.Value } }
+                        if ($raw.seen)          { foreach ($p in $raw.seen.PSObject.Properties)          { $existing.seen[$p.Name] = @($p.Value) } }
+                        if ($raw.learned)       { foreach ($p in $raw.learned.PSObject.Properties)       { $existing.learned[$p.Name] = @($p.Value) } }
+                        if ($raw.videos)        { foreach ($p in $raw.videos.PSObject.Properties)        { $existing.videos[$p.Name] = @($p.Value) } }
+                        if ($raw.texts)         { foreach ($p in $raw.texts.PSObject.Properties)         { $existing.texts[$p.Name] = @($p.Value) } }
+                        if ($raw.deletedVideos) { foreach ($p in $raw.deletedVideos.PSObject.Properties) { $existing.deletedVideos[$p.Name] = @($p.Value) } }
+                        if ($raw.deletedTexts)  { foreach ($p in $raw.deletedTexts.PSObject.Properties)  { $existing.deletedTexts[$p.Name] = @($p.Value) } }
+                        if ($raw.positions)     { foreach ($p in $raw.positions.PSObject.Properties)     { $existing.positions[$p.Name] = [int]$p.Value } }
+                        if ($raw.settings)      { foreach ($p in $raw.settings.PSObject.Properties)      { $existing.settings[$p.Name] = $p.Value } }
                     } catch {}
                 }
 
@@ -369,14 +372,52 @@ while ($listener.IsListening) {
                         $existing.learned[$lang] = @($existing.learned[$lang] + $arr | Select-Object -Unique)
                     }
                 }
+                if ($incoming.deletedVideos -and ($incoming.deletedVideos -is [PSCustomObject])) {
+                    foreach ($p in $incoming.deletedVideos.PSObject.Properties) {
+                        $lang = $p.Name; $arr = @($p.Value)
+                        if (-not $existing.deletedVideos.ContainsKey($lang)) { $existing.deletedVideos[$lang] = @() }
+                        $existing.deletedVideos[$lang] = @($existing.deletedVideos[$lang] + $arr | Select-Object -Unique)
+                    }
+                }
+                if ($incoming.deletedTexts -and ($incoming.deletedTexts -is [PSCustomObject])) {
+                    foreach ($p in $incoming.deletedTexts.PSObject.Properties) {
+                        $lang = $p.Name; $arr = @($p.Value)
+                        if (-not $existing.deletedTexts.ContainsKey($lang)) { $existing.deletedTexts[$lang] = @() }
+                        $existing.deletedTexts[$lang] = @($existing.deletedTexts[$lang] + $arr | Select-Object -Unique)
+                    }
+                }
                 if ($incoming.videos -and ($incoming.videos -is [PSCustomObject])) {
                     foreach ($p in $incoming.videos.PSObject.Properties) {
-                        $existing.videos[$p.Name] = @($p.Value)
+                        $lang = $p.Name; $arr = @($p.Value)
+                        if (-not $existing.videos.ContainsKey($lang)) { $existing.videos[$lang] = @() }
+                        $byId = @{}
+                        foreach ($item in $existing.videos[$lang]) { if ($item -and $item.id) { $byId[$item.id] = $item } }
+                        foreach ($item in $arr) { if ($item -and $item.id) { $byId[$item.id] = $item } }
+                        $existing.videos[$lang] = @($byId.Values)
                     }
                 }
                 if ($incoming.texts -and ($incoming.texts -is [PSCustomObject])) {
                     foreach ($p in $incoming.texts.PSObject.Properties) {
-                        $existing.texts[$p.Name] = @($p.Value)
+                        $lang = $p.Name; $arr = @($p.Value)
+                        if (-not $existing.texts.ContainsKey($lang)) { $existing.texts[$lang] = @() }
+                        $byId = @{}
+                        foreach ($item in $existing.texts[$lang]) { if ($item -and $item.id) { $byId[$item.id] = $item } }
+                        foreach ($item in $arr) { if ($item -and $item.id) { $byId[$item.id] = $item } }
+                        $existing.texts[$lang] = @($byId.Values)
+                    }
+                }
+                foreach ($lang in @($existing.videos.Keys)) {
+                    $delIds = @()
+                    if ($existing.deletedVideos.ContainsKey($lang)) { $delIds = $existing.deletedVideos[$lang] }
+                    if ($delIds.Count -gt 0) {
+                        $existing.videos[$lang] = @($existing.videos[$lang] | Where-Object { $_ -and $_.id -and ($delIds -notcontains $_.id) })
+                    }
+                }
+                foreach ($lang in @($existing.texts.Keys)) {
+                    $delIds = @()
+                    if ($existing.deletedTexts.ContainsKey($lang)) { $delIds = $existing.deletedTexts[$lang] }
+                    if ($delIds.Count -gt 0) {
+                        $existing.texts[$lang] = @($existing.texts[$lang] | Where-Object { $_ -and $_.id -and ($delIds -notcontains $_.id) })
                     }
                 }
                 if ($incoming.positions -and ($incoming.positions -is [PSCustomObject])) {
@@ -451,6 +492,10 @@ while ($listener.IsListening) {
         }
         $context.Response.OutputStream.Write($bytes, 0, $bytes.Length)
         $context.Response.Close()
+    }
+    } catch {
+        Write-Host "[request] Error handling ${path}: $_"
+        try { $context.Response.Close() } catch {}
     }
 }
 } catch {
